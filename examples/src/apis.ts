@@ -2,16 +2,14 @@ import { Bunny, type Context } from "../../bunny";
 
 const api = new Bunny();
 
-api.get("/api/users", async (c: Context) =>
-    c.json([
+api.get("/api/users", async (c: Context) => {
+    return [
         { id: 1, name: "Alice" },
         { id: 2, name: "Bob" },
-    ])
-);
+    ];
+});
 
-api.get("/api/users/:id", async (c: Context) =>
-    c.json({ id: +c.params.id, name: "User " + c.params.id })
-);
+api.get("/api/users/:id", async (c: Context) => ({ id: c.params.id }));
 
 api.post("/api/users", async (c: Context) => {
     const body = await c.req.json();
@@ -25,8 +23,6 @@ api.put("/api/users/:id", async (c: Context) => {
     return c.json({ id: +c.params.id, ...body });
 });
 
-api.delete("/api/users/:id", async (c: Context) =>
-    c.json({ id: +c.params.id, deleted: true })
-);
+api.delete("/api/users/:id", async (c: Context) => c.json({ id: +c.params.id, deleted: true }));
 
 export default api;
