@@ -100,98 +100,13 @@ export class Bunny {
     private errDef?: ErrorDef;
     private stache?: Stache;
 
-    get(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("GET", pattern, handler, tmpl);
-    }
-
-    post(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("POST", pattern, handler, tmpl);
-    }
-
-    put(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("PUT", pattern, handler, tmpl);
-    }
-
-    delete(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("DELETE", pattern, handler, tmpl);
-    }
-
-    patch(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("PATCH", pattern, handler, tmpl);
-    }
-
-    options(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("OPTIONS", pattern, handler, tmpl);
-    }
-
-    head(pattern: string, arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.add("HEAD", pattern, handler, tmpl);
-    }
-
-    use(pattern: string | Function, handler?: Function) {
-        if (typeof pattern === "function") {
-            handler = pattern;
-            pattern = "/*";
-        }
-        this.middlewares.push({
-            pattern: pattern as string,
-            urlp: new URLPattern({ pathname: pattern as string }),
-            handler: handler!,
-        });
-    }
-
-    error(arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.errDef = { template: tmpl, handler };
-    }
-
-    route(prefix: string, sub: Bunny) {
-        for (const r of sub.routes) {
-            this.add(r.method, joinPath(prefix, r.pattern), r.handler, r.template);
-        }
-        for (const m of sub.middlewares) {
-            const p = joinPath(prefix, m.pattern);
-            this.middlewares.push({ pattern: p, urlp: new URLPattern({ pathname: p }), handler: m.handler });
-        }
-        if (sub.errDef && !this.errDef) {
-            this.errDef = sub.errDef;
-        }
-    }
-
-    static(webPath: string, localPath: string) {
-        const pattern = webPath + "/:rest*";
-        const self = this;
-        function handler(c: Context) {
-            let filePath = (c.params.rest || "").replace(/^\/+/, "");
-            if (filePath.includes("..") || filePath.includes("~")) {
-                return new Response("Forbidden", { status: 403 });
-            }
-            const fullPath = resolve(localPath, filePath);
-            const file = Bun.file(fullPath);
-            return (async () => {
-                if (!(await file.exists())) {
-                    if (!filePath) {
-                        const idx = Bun.file(resolve(fullPath, "index.html"));
-                        if (await idx.exists()) return serveFile(c.req, idx);
-                    }
-                    return new Response("Not Found", { status: 404 });
-                }
-                return serveFile(c.req, file);
-            })();
-        }
-        self.add("GET", pattern, handler);
-    }
-
-    engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
-        this.stache = new Stache(tmplRoot, globalVars);
-    }
+    get = this.routeFor("GET");
+    post = this.routeFor("POST");
+    put = this.routeFor("PUT");
+    delete = this.routeFor("DELETE");
+    patch = this.routeFor("PATCH");
+    options = this.routeFor("OPTIONS");
+    head = this.routeFor("HEAD");
 
     fetch = async (req: Request): Promise<Response> => {
         const url = new URL(req.url);
@@ -236,7 +151,72 @@ export class Bunny {
         }
     };
 
-    private add(method: string, pattern: string, handler: Function, template?: string) {
+    use(pattern: string | Function, handler?: Function) {
+        if (typeof pattern === "function") {
+            handler = pattern;
+            pattern = "/*";
+        }
+        this.middlewares.push({
+            pattern: pattern as string,
+            urlp: new URLPattern({ pathname: pattern as string }),
+            handler: handler!,
+        });
+    }
+
+    error(arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.errDef = { template: tmpl, handler };
+    }
+
+    route(prefix: string, sub: Bunny) {
+        for (const r of sub.routes) {
+            this.addRoute(r.method, joinPath(prefix, r.pattern), r.handler, r.template);
+        }
+        for (const m of sub.middlewares) {
+            const p = joinPath(prefix, m.pattern);
+            this.middlewares.push({ pattern: p, urlp: new URLPattern({ pathname: p }), handler: m.handler });
+        }
+        if (sub.errDef && !this.errDef) {
+            this.errDef = sub.errDef;
+        }
+    }
+
+    static(webPath: string, localPath: string) {
+        const pattern = webPath + "/:rest*";
+        const self = this;
+        function handler(c: Context) {
+            let filePath = (c.params.rest || "").replace(/^\/+/, "");
+            if (filePath.includes("..") || filePath.includes("~")) {
+                return new Response("Forbidden", { status: 403 });
+            }
+            const fullPath = resolve(localPath, filePath);
+            const file = Bun.file(fullPath);
+            return (async () => {
+                if (!(await file.exists())) {
+                    if (!filePath) {
+                        const idx = Bun.file(resolve(fullPath, "index.html"));
+                        if (await idx.exists()) return serveFile(c.req, idx);
+                    }
+                    return new Response("Not Found", { status: 404 });
+                }
+                return serveFile(c.req, file);
+            })();
+        }
+        self.addRoute("GET", pattern, handler);
+    }
+
+    engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
+        this.stache = new Stache(tmplRoot, globalVars);
+    }
+
+    private routeFor(method: string) {
+        return (pattern: string, arg1: Function | string, arg2?: Function) => {
+            const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+            this.addRoute(method, pattern, handler, tmpl);
+        };
+    }
+
+    private addRoute(method: string, pattern: string, handler: Function, template?: string) {
         this.routes.push({
             method,
             pattern,
