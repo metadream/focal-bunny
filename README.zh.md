@@ -1,17 +1,17 @@
-# 🐰 Bunny — Lightweight Bun Web Framework
+# 🐰 Bunny — 轻量 Bun Web 框架
 
-A web framework built on [Bun](https://bun.sh) native APIs with zero external dependencies. Supports routing, middleware, template engine, static files, and error handling.
+基于 [Bun](https://bun.sh) 原生 API 的 Web 框架，无需外部依赖，支持路由分组、中间件、模板引擎、静态文件、错误处理。
 
 ---
 
-## Installation
+## 安装
 
 ```bash
-# Install via JSR
+# 通过 JSR 安装
 bunx jsr add @bunny/bunny
 ```
 
-## Quick Start
+## 快速开始
 
 ```typescript
 import { Bunny } from "jsr:@bunny/bunny";
@@ -23,7 +23,7 @@ app.get("/", async (c) => c.text("Hello World!"));
 export default app;
 ```
 
-Run:
+启动：
 
 ```bash
 bun run server.ts
@@ -31,9 +31,9 @@ bun run server.ts
 
 ---
 
-## Routing
+## 路由
 
-### HTTP Methods
+### HTTP 方法
 
 ```typescript
 app.get("/path", handler);
@@ -45,7 +45,7 @@ app.options("/path", handler);
 app.head("/path", handler);
 ```
 
-Path parameters (`:param`) via `c.params`:
+路径参数（`:param`）通过 `c.params` 获取：
 
 ```typescript
 app.get("/users/:id", async (c) => {
@@ -54,31 +54,31 @@ app.get("/users/:id", async (c) => {
 // GET /users/42 → {"id":42}
 ```
 
-### Template Rendering
+### 模板渲染
 
-Pass a template filename as the second argument:
+第二个参数传入模板文件名：
 
 ```typescript
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-### Priority
+### 优先级
 
-Static paths > `:param` paths > `*` wildcards, regardless of registration order.
+静态路径 > 参数路径 > 通配符，与注册顺序无关。
 
 ---
 
-## Response (Context)
+## 响应 (Context)
 
 ```typescript
-c.text("ok");                       // Plain text
+c.text("ok");                       // 纯文本
 c.html("<h1>Title</h1>");           // HTML
 c.json({ key: "value" });           // JSON
-c.status(201);                      // Set status code (chainable)
-c.header("X-Version", "1.0");       // Set response header (chainable)
+c.status(201);                      // 设置状态码
+c.header("X-Version", "1.0");       // 设置响应头
 ```
 
-Chaining:
+链式调用：
 
 ```typescript
 app.get("/created", async (c) => {
@@ -88,13 +88,13 @@ app.get("/created", async (c) => {
 });
 ```
 
-You can also return a `Response` object directly, a `string` (auto HTML), an `object` (auto JSON), or `null`/`undefined` (204 No Content).
+也可以直接返回 `Response` 对象，或返回 `string`（自动作为 HTML）、`object`（自动作为 JSON）、`null`/`undefined`（204 No Content）。
 
 ---
 
-## Middleware
+## 中间件
 
-### Global Middleware
+### 全局中间件
 
 ```typescript
 import { type Context } from "jsr:@bunny/bunny";
@@ -108,7 +108,7 @@ async function logger(c: Context, next: () => Promise<void>) {
 app.use(logger);
 ```
 
-### Scoped Middleware
+### 带路径的中间件
 
 ```typescript
 app.use("/admin/*", auth);
@@ -116,9 +116,9 @@ app.use("/admin/*", auth);
 
 ---
 
-## Route Grouping
+## 路由分组
 
-Create a separate `Bunny` instance and mount it with `route()`:
+创建独立 `Bunny` 实例，通过 `route()` 挂载：
 
 ```typescript
 const api = new Bunny();
@@ -127,70 +127,70 @@ api.get("/users", async (c) => c.json([{ id: 1, name: "Alice" }]));
 app.route("/v1", api);  // → /v1/users
 ```
 
-Middleware and error handlers from the sub-instance are merged in. The sub-instance's error handler is only used if the parent has not set one.
+分组内的中间件和错误处理器**仅当主应用未设置时**自动继承。
 
 ---
 
-## Static Files
+## 静态文件
 
 ```typescript
 app.static("/assets", "./public");
 // GET /assets/test.txt → ./public/test.txt
 ```
 
-Automatic ETag, `304` cache negotiation, directory index (`index.html`), and path traversal protection (`..` and `~` blocked).
+自动 ETag、`304` 缓存协商、目录索引（自动寻找 index.html）、路径穿越防护（`..` 和 `~` 被拦截）。
 
 ---
 
-## Template Engine (Stache)
+## 模板引擎
 
 ```typescript
 app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-| Syntax | Meaning |
+| 语法 | 说明 |
 |---|---|
-| `{{=expr}}` | Output expression |
+| `{{=expr}}` | 输出表达式 |
 | `{{? expr}}` | if |
 | `{{?? expr}}` | else if |
 | `{{?}}` | end if |
-| `{{~ arr: val}}` | for loop |
-| `{{~ arr: val : idx}}` | for loop with index |
-| `{{@ file}}` | Include partial |
+| `{{~ arr: val}}` | for 循环 |
+| `{{~ arr: val : idx}}` | for 循环（带索引） |
+| `{{@ file}}` | 引入子模板 |
 
 ---
 
-## Error Handling
+## 错误处理
 
 ```typescript
 import { HttpError } from "jsr:@bunny/bunny";
 
 app.get("/error", async (c) => {
-    throw new HttpError(400, "Bad request");
+    throw new HttpError(400, "参数错误");
 });
 ```
 
-Register an error handler:
+注册错误处理器：
 
 ```typescript
-// With template — error template is only rendered if the errored route also had a template
+// 带模板 — 仅原路由也使用模板时才渲染
 app.error("error.html", async (e, c) => {
     const status = e instanceof HttpError ? e.status : 500;
     return { status, message: e.message };
 });
 
-// Without template — always returns the raw result
+// 无模板 — 始终返回原始结果
 app.error(async (e, c) => {
     return { error: e.message };
 });
 ```
 
-Error response behavior: if the original route that caused the error had a template, the error template is rendered (HTML). Otherwise, the error handler's return value is returned as-is (JSON for objects, text for strings). Framework-level errors (404, 405, static file 403/404) also flow through the error handler.
+错误响应行为：若抛出错误的原路由带有模板，则渲染错误模板（HTML）；否则返回错误处理器的原始结果（JSON/文本）。404、405、静态文件 403/404 等框架级错误也统一走错误处理器。
 
 ---
 
-## Full Example
+## 完整示例
 
 ```typescript
 // server.ts
@@ -222,36 +222,36 @@ export default app;
 
 ---
 
-## API Reference
+## API 一览
 
 ### Bunny
 
-| Method | Description |
+| 方法 | 说明 |
 |---|---|
-| `get / post / put / delete / patch / options / head` | HTTP route registration |
-| `use(handler)` | Global middleware |
-| `use(pattern, handler)` | Scoped middleware |
-| `error(handler)` | Error handler |
-| `error(template, handler)` | Error handler with template |
-| `route(prefix, sub)` | Mount sub-router |
-| `static(webPath, localPath)` | Static file serving |
-| `engine(tmplRoot, globalVars?)` | Template engine config |
+| `get / post / put / delete / patch / options / head` | HTTP 路由 |
+| `use(handler)` | 全局中间件 |
+| `use(pattern, handler)` | 路径中间件 |
+| `error(handler)` | 错误处理器 |
+| `error(template, handler)` | 错误处理器 + 模板 |
+| `route(prefix, sub)` | 挂载子路由 |
+| `static(webPath, localPath)` | 静态文件服务 |
+| `engine(tmplRoot, globalVars?)` | 模板引擎 |
 
 ### Context
 
-| Method / Property | Description |
+| 方法 / 属性 | 说明 |
 |---|---|
-| `c.req` | Raw Request object |
-| `c.params` | Path parameters |
-| `c.text(str)` | Plain text response |
-| `c.json(obj)` | JSON response |
-| `c.html(str)` | HTML response |
-| `c.status(code)` | Set status code (chainable) |
-| `c.header(name, value)` | Set response header (chainable) |
+| `c.req` | 原始 Request |
+| `c.params` | 路径参数 |
+| `c.text(str)` | 纯文本响应 |
+| `c.json(obj)` | JSON 响应 |
+| `c.html(str)` | HTML 响应 |
+| `c.status(code)` | 设置状态码（链式） |
+| `c.header(name, value)` | 设置响应头（链式） |
 
 ---
 
-## Publishing to JSR
+## 发布到 JSR
 
 ```bash
 bunx jsr publish
