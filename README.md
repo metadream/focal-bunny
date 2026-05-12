@@ -8,13 +8,13 @@ A web framework built on [Bun](https://bun.sh) native APIs with zero external de
 
 ```bash
 # Install via JSR
-bunx jsr add @bunny/bunny
+bunx jsr add @focal/bunny
 ```
 
 ## Quick Start
 
 ```typescript
-import { Bunny } from "jsr:@bunny/bunny";
+import { Bunny } from "jsr:@focal/bunny";
 
 const app = new Bunny();
 
@@ -97,7 +97,7 @@ You can also return a `Response` object directly, a `string` (auto HTML), an `ob
 ### Global Middleware
 
 ```typescript
-import { type Context } from "jsr:@bunny/bunny";
+import { type Context } from "jsr:@focal/bunny";
 
 async function logger(c: Context, next: () => Promise<void>) {
     const start = Date.now();
@@ -164,7 +164,7 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ## Error Handling
 
 ```typescript
-import { HttpError } from "jsr:@bunny/bunny";
+import { HttpError } from "jsr:@focal/bunny";
 
 app.get("/error", async (c) => {
     throw new HttpError(400, "Bad request");
@@ -194,7 +194,7 @@ Error response behavior: if the original route that caused the error had a templ
 
 ```typescript
 // server.ts
-import { Bunny, HttpError, type Context } from "jsr:@bunny/bunny";
+import { Bunny, HttpError, type Context } from "jsr:@focal/bunny";
 import routes from "./src/routes";
 import timer from "./src/middlewars";
 import auth from "./src/auth";

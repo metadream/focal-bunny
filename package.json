@@ -1,5 +1,5 @@
 {
-  "name": "@bunny/bunny",
+  "name": "focal-bunny",
   "version": "0.1.0",
   "description": "A lightweight Bun web framework with zero dependencies",
   "author": "Marco <x@zerg.cc>",
