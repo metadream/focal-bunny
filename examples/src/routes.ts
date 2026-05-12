@@ -42,6 +42,10 @@ routes.patch("/data/:id", async (c: Context) => {
     return c.json({ id: +c.params.id, patched: body });
 });
 
+routes.get("/protected/profile", async (c: Context) =>
+    c.json({ user: "admin", role: "admin", message: "this is protected" })
+);
+
 routes.get("/error", async (c: Context) => {
     throw new HttpError(400, "This is a bad request");
 });

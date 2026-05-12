@@ -153,8 +153,12 @@ export class Bunny {
         this.add("HEAD", pattern, handler, tmpl);
     }
 
-    use(pattern: string, handler: Function) {
-        this.middlewares.push({ pattern, urlp: new URLPattern({ pathname: pattern }), handler });
+    use(pattern: string | Function, handler?: Function) {
+        if (typeof pattern === "function") {
+            handler = pattern;
+            pattern = "/*";
+        }
+        this.middlewares.push({ pattern: pattern as string, urlp: new URLPattern({ pathname: pattern as string }), handler: handler! });
     }
 
     error(arg1: Function | string, arg2?: Function) {
