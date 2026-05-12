@@ -153,11 +153,12 @@ app.route("/v1", api);  // → /v1/users
 
 ## 会话 (Session)
 
-基于内存的会话支持，通过 `c.session.get()` / `c.session.set()` 操作：
+基于内存的会话支持：
 
 ```typescript
 app.get("/login", async (c) => {
     c.session.set("user", { id: 1, name: "Alice" });
+    c.session.set("lang", "zh");
     return c.text("已登录");
 });
 
@@ -165,7 +166,20 @@ app.get("/profile", async (c) => {
     const user = c.session.get("user");
     return user ? c.json(user) : c.text("未登录");
 });
+
+app.get("/logout", async (c) => {
+    c.session.remove("user");      // 删除单个字段
+    c.session.destroy();           // 清空所有数据并过期 cookie
+    return c.text("已退出");
+});
 ```
+
+| 方法 | 说明 |
+|---|---|
+| `get(key)` | 获取值 |
+| `set(key, value)` | 设置值 |
+| `remove(key)` | 删除单个字段 |
+| `destroy()` | 清空所有数据并使 cookie 过期 |
 
 Session ID 通过 `sid` cookie（`HttpOnly`、`SameSite=Lax`）传递。数据存储在默认的 `SessionStore` 内存中，重启服务后所有会话将丢失。
 

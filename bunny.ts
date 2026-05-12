@@ -15,6 +15,8 @@ const STATUS_TEXT: Record<number, string> = {
     504: "Gateway Timeout",
 };
 
+type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
+
 interface RouteDef {
     method: string;
     pattern: string;
@@ -72,7 +74,12 @@ export class Context {
         this.query = Object.fromEntries(new URL(req.url).searchParams);
     }
 
-    get session(): { get: <T>(key: string) => T | undefined; set: (key: string, value: unknown) => void } {
+    get session(): {
+        get: <T>(key: string) => T | undefined;
+        set: (key: string, value: unknown) => void;
+        remove: (key: string) => void;
+        destroy: () => void;
+    } {
         const self = this;
         if (!self._sessionData) {
             const cookies = parseCookies(self.req);
@@ -92,6 +99,15 @@ export class Context {
             set(key: string, value: unknown): void {
                 self._sessionData![key] = value;
                 sessionStore.set(self._sessionSid!, self._sessionData!);
+            },
+            remove(key: string): void {
+                delete self._sessionData![key];
+                sessionStore.set(self._sessionSid!, self._sessionData!);
+            },
+            destroy(): void {
+                self._sessionData = {};
+                sessionStore.set(self._sessionSid!, {});
+                self.header("Set-Cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
             },
         };
     }
@@ -134,8 +150,6 @@ export class Context {
         return this.resHeaders;
     }
 }
-
-type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 
 export class Bunny {
     private routes: RouteDef[] = [];

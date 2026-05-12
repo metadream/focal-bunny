@@ -153,11 +153,12 @@ Middleware and error handlers from the sub-instance are merged in. The sub-insta
 
 ## Session
 
-In-memory session support via `c.session.get()` / `c.session.set()`:
+In-memory session support:
 
 ```typescript
 app.get("/login", async (c) => {
     c.session.set("user", { id: 1, name: "Alice" });
+    c.session.set("lang", "en");
     return c.text("Logged in");
 });
 
@@ -165,7 +166,20 @@ app.get("/profile", async (c) => {
     const user = c.session.get("user");
     return user ? c.json(user) : c.text("Not logged in");
 });
+
+app.get("/logout", async (c) => {
+    c.session.remove("user");      // Remove a single key
+    c.session.destroy();           // Clear all data & expire cookie
+    return c.text("Logged out");
+});
 ```
+
+| Method | Description |
+|---|---|
+| `get(key)` | Get value by key |
+| `set(key, value)` | Set value |
+| `remove(key)` | Remove a single key |
+| `destroy()` | Clear all data and expire the session cookie |
 
 Session ID is stored in a `sid` cookie (`HttpOnly`, `SameSite=Lax`). Data is held in memory by the default `SessionStore` — restarting the server clears all sessions.
 
