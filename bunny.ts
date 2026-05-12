@@ -125,8 +125,10 @@ export class Bunny {
             const match = route.urlp.exec(url);
             if (match?.pathname?.groups) Object.assign(params, match.pathname.groups);
 
-            let result: any;
+            ctx._template = route.template;
             const mws = this.middlewares.filter((m) => m.urlp.test(url));
+            let result: any;
+
             const compose = async (i: number): Promise<void> => {
                 if (i < mws.length) {
                     await mws[i].handler(ctx, () => compose(i + 1));
@@ -242,7 +244,7 @@ export class Bunny {
         const result = await this.errDef.handler(e, ctx);
         const status = e instanceof HttpError ? e.status : 500;
 
-        if (this.errDef.template && this.stache) {
+        if (ctx._template && this.errDef.template && this.stache) {
             const html = await this.stache.view(this.errDef.template, result);
             return new Response(html, {
                 status,
