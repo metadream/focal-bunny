@@ -1,6 +1,7 @@
 import { resolve } from "path";
 import { Stache } from "./stache";
 
+const SESSION_COOKIE = "SESS_ID";
 const STATUS_TEXT: Record<number, string> = {
     400: "Bad Request",
     401: "Unauthorized",
@@ -43,18 +44,56 @@ export class HttpError extends Error {
     }
 }
 
+export class SessionStore {
+    private sessions = new Map<string, Record<string, unknown>>();
+
+    get(sid: string): Record<string, unknown> | undefined {
+        return this.sessions.get(sid);
+    }
+    set(sid: string, data: Record<string, unknown>): void {
+        this.sessions.set(sid, data);
+    }
+}
+
+const sessionStore = new SessionStore();
 export class Context {
     req: Request;
     params: Record<string, string>;
     query: Record<string, string>;
     private resStatus = 200;
     private resHeaders: Record<string, string> = {};
+    private _sessionData?: Record<string, unknown>;
+    private _sessionSid?: string;
     [key: string]: unknown;
 
     constructor(req: Request, params: Record<string, string>) {
         this.req = req;
         this.params = params;
         this.query = Object.fromEntries(new URL(req.url).searchParams);
+    }
+
+    get session(): { get: <T>(key: string) => T | undefined; set: (key: string, value: unknown) => void } {
+        const self = this;
+        if (!self._sessionData) {
+            const cookies = parseCookies(self.req);
+            self._sessionSid = cookies[SESSION_COOKIE];
+            if (self._sessionSid) {
+                self._sessionData = sessionStore.get(self._sessionSid) || {};
+            } else {
+                self._sessionSid = crypto.randomUUID();
+                self._sessionData = {};
+                self.header("Set-Cookie", `${SESSION_COOKIE}=${self._sessionSid}; Path=/; HttpOnly; SameSite=Lax`);
+            }
+        }
+        return {
+            get<T>(key: string): T | undefined {
+                return self._sessionData![key] as T;
+            },
+            set(key: string, value: unknown): void {
+                self._sessionData![key] = value;
+                sessionStore.set(self._sessionSid!, self._sessionData!);
+            },
+        };
     }
 
     status(code: number): this {
@@ -302,4 +341,14 @@ function toResponse(val: any, ctx?: Context, overrideStatus?: number): Response 
 
 function joinPath(a: string, b: string): string {
     return a.replace(/\/+$/, "") + "/" + b.replace(/^\/+/, "");
+}
+
+function parseCookies(req: Request): Record<string, string> {
+    const cookie = req.headers.get("Cookie") || "";
+    const result: Record<string, string> = {};
+    for (const c of cookie.split(";")) {
+        const i = c.indexOf("=");
+        if (i > 0) result[c.slice(0, i).trim()] = c.slice(i + 1).trim();
+    }
+    return result;
 }
