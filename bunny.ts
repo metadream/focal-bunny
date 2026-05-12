@@ -46,6 +46,7 @@ export class HttpError extends Error {
 export class Context {
     req: Request;
     params: Record<string, string>;
+    query: Record<string, string>;
     private resStatus = 200;
     private resHeaders: Record<string, string> = {};
     [key: string]: unknown;
@@ -53,6 +54,7 @@ export class Context {
     constructor(req: Request, params: Record<string, string>) {
         this.req = req;
         this.params = params;
+        this.query = Object.fromEntries(new URL(req.url).searchParams);
     }
 
     status(code: number): this {
