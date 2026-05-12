@@ -1,5 +1,7 @@
 # 🐰 Bunny — 轻量 Bun Web 框架
 
+中文 | [English](README.md)
+
 基于 [Bun](https://bun.sh) 原生 API 的 Web 框架，无需外部依赖，支持路由分组、中间件、模板引擎、静态文件、错误处理。
 
 ---
@@ -68,7 +70,18 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 ---
 
-## 响应 (Context)
+## 响应
+
+路由处理器可以直接返回任意值，无需调用 context 方法：
+
+```typescript
+app.get("/text", async (c) => "Hello World");         // text/html
+app.get("/json", async (c) => ({ key: "value" }));     // application/json
+app.get("/null", async (c) => null);                    // 204 No Content
+app.get("/response", async (c) => new Response("ok")); // 原始 Response
+```
+
+也可以使用 `Context` API 进行精细控制：
 
 ```typescript
 c.text("ok");                       // 纯文本
@@ -87,8 +100,6 @@ app.get("/created", async (c) => {
     return c.json({ message: "created" });
 });
 ```
-
-也可以直接返回 `Response` 对象，或返回 `string`（自动作为 HTML）、`object`（自动作为 JSON）、`null`/`undefined`（204 No Content）。
 
 ---
 

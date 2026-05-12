@@ -1,5 +1,7 @@
 # 🐰 Bunny — Lightweight Bun Web Framework
 
+[中文](README.zh.md) | English
+
 A web framework built on [Bun](https://bun.sh) native APIs with zero external dependencies. Supports routing, middleware, template engine, static files, and error handling.
 
 ---
@@ -68,7 +70,18 @@ Static paths > `:param` paths > `*` wildcards, regardless of registration order.
 
 ---
 
-## Response (Context)
+## Response
+
+Return any value directly from the route handler — no need to call context methods:
+
+```typescript
+app.get("/text", async (c) => "Hello World");         // text/html
+app.get("/json", async (c) => ({ key: "value" }));     // application/json
+app.get("/null", async (c) => null);                    // 204 No Content
+app.get("/response", async (c) => new Response("ok")); // Raw Response
+```
+
+Or use the `Context` API for full control:
 
 ```typescript
 c.text("ok");                       // Plain text
@@ -87,8 +100,6 @@ app.get("/created", async (c) => {
     return c.json({ message: "created" });
 });
 ```
-
-You can also return a `Response` object directly, a `string` (auto HTML), an `object` (auto JSON), or `null`/`undefined` (204 No Content).
 
 ---
 
