@@ -56,6 +56,15 @@ app.get("/users/:id", async (c) => {
 // GET /users/42 → {"id":42}
 ```
 
+查询参数通过 `c.query` 获取：
+
+```typescript
+app.get("/search", async (c) => {
+    return c.json({ q: c.query.q, page: c.query.page });
+});
+// GET /search?q=bunny&page=1 → {"q":"bunny","page":"1"}
+```
+
 ### 模板渲染
 
 第二个参数传入模板文件名：
@@ -139,6 +148,26 @@ app.route("/v1", api);  // → /v1/users
 ```
 
 分组内的中间件和错误处理器**仅当主应用未设置时**自动继承。
+
+---
+
+## 会话 (Session)
+
+基于内存的会话支持，通过 `c.session.get()` / `c.session.set()` 操作：
+
+```typescript
+app.get("/login", async (c) => {
+    c.session.set("user", { id: 1, name: "Alice" });
+    return c.text("已登录");
+});
+
+app.get("/profile", async (c) => {
+    const user = c.session.get("user");
+    return user ? c.json(user) : c.text("未登录");
+});
+```
+
+Session ID 通过 `sid` cookie（`HttpOnly`、`SameSite=Lax`）传递。数据存储在默认的 `SessionStore` 内存中，重启服务后所有会话将丢失。
 
 ---
 
@@ -251,9 +280,11 @@ export default app;
 ### Context
 
 | 方法 / 属性 | 说明 |
-|---|---|
+|---|---|---|
 | `c.req` | 原始 Request |
 | `c.params` | 路径参数 |
+| `c.query` | 查询字符串参数 |
+| `c.session` | 会话读写（`.get<T>(key)`, `.set(key, value)`） |
 | `c.text(str)` | 纯文本响应 |
 | `c.json(obj)` | JSON 响应 |
 | `c.html(str)` | HTML 响应 |

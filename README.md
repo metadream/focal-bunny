@@ -56,6 +56,15 @@ app.get("/users/:id", async (c) => {
 // GET /users/42 → {"id":42}
 ```
 
+Query parameters via `c.query`:
+
+```typescript
+app.get("/search", async (c) => {
+    return c.json({ q: c.query.q, page: c.query.page });
+});
+// GET /search?q=bunny&page=1 → {"q":"bunny","page":"1"}
+```
+
 ### Template Rendering
 
 Pass a template filename as the second argument:
@@ -139,6 +148,26 @@ app.route("/v1", api);  // → /v1/users
 ```
 
 Middleware and error handlers from the sub-instance are merged in. The sub-instance's error handler is only used if the parent has not set one.
+
+---
+
+## Session
+
+In-memory session support via `c.session.get()` / `c.session.set()`:
+
+```typescript
+app.get("/login", async (c) => {
+    c.session.set("user", { id: 1, name: "Alice" });
+    return c.text("Logged in");
+});
+
+app.get("/profile", async (c) => {
+    const user = c.session.get("user");
+    return user ? c.json(user) : c.text("Not logged in");
+});
+```
+
+Session ID is stored in a `sid` cookie (`HttpOnly`, `SameSite=Lax`). Data is held in memory by the default `SessionStore` — restarting the server clears all sessions.
 
 ---
 
@@ -251,9 +280,11 @@ export default app;
 ### Context
 
 | Method / Property | Description |
-|---|---|
+|---|---|---|
 | `c.req` | Raw Request object |
 | `c.params` | Path parameters |
+| `c.query` | Query string parameters |
+| `c.session` | Session get/set (`.get<T>(key)`, `.set(key, value)`) |
 | `c.text(str)` | Plain text response |
 | `c.json(obj)` | JSON response |
 | `c.html(str)` | HTML response |
