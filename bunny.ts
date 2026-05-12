@@ -49,7 +49,7 @@ export interface Context {
     [key: string]: unknown;
 }
 
-function routePriority(pattern: string): number {
+function getRoutePriority(pattern: string): number {
     let score = 0;
     for (const seg of pattern.replace(/^\//, "").split("/")) {
         if (!seg || seg === "*") score += 0;
@@ -73,7 +73,7 @@ export class Bunny {
             urlp: new URLPattern({ pathname: pattern }),
             handler,
             template,
-            priority: routePriority(pattern),
+            priority: getRoutePriority(pattern),
         });
     }
 
