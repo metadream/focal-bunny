@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Users</title></head>
+<body>
+  <h1>User List</h1>
+  <ul>
+  {{~ users: user : idx}}
+    <li>{{=idx}}. {{=user.name}} (ID: {{=user.id}})</li>
+  {{~}}
+  </ul>
+  <p>&copy; {{=year}} {{=appName}}</p>
+</body>
+</html>

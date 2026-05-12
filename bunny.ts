@@ -43,10 +43,51 @@ interface ErrorDef {
     handler: Function;
 }
 
-export interface Context {
+export class Context {
     req: Request;
     params: Record<string, string>;
+    private resStatus = 200;
+    private resHeaders: Record<string, string> = {};
     [key: string]: unknown;
+
+    constructor(req: Request, params: Record<string, string>) {
+        this.req = req;
+        this.params = params;
+    }
+
+    status(code: number): this {
+        this.resStatus = code;
+        return this;
+    }
+
+    header(name: string, value: string): this {
+        this.resHeaders[name] = value;
+        return this;
+    }
+
+    json(obj: any): Response {
+        return new Response(JSON.stringify(obj), {
+            status: this.resStatus,
+            headers: { ...this.resHeaders, "Content-Type": "application/json" },
+        });
+    }
+
+    html(str: string): Response {
+        return new Response(str, {
+            status: this.resStatus,
+            headers: { ...this.resHeaders, "Content-Type": "text/html; charset=utf-8" },
+        });
+    }
+
+    text(str: string): Response {
+        return new Response(str, {
+            status: this.resStatus,
+            headers: this.resHeaders,
+        });
+    }
+
+    get responseStatus() { return this.resStatus; }
+    get responseHeaders() { return this.resHeaders; }
 }
 
 function getRoutePriority(pattern: string): number {
@@ -64,7 +105,6 @@ export class Bunny {
     private middlewares: MiddlewareDef[] = [];
     private errDef?: ErrorDef;
     private stache?: Stache;
-    private tmplMeta = new WeakMap<Function, string>();
 
     private add(method: string, pattern: string, handler: Function, template?: string) {
         this.routes.push({
@@ -77,116 +117,92 @@ export class Bunny {
         });
     }
 
-    private decorator(method: string, pattern: string) {
-        const self = this;
-        const reg: any = (...a: any[]) => {
-            let h: Function | undefined;
-            if (a.length === 1 && typeof a[0] === "function") h = a[0];
-            else if (a.length === 3 && a[2]?.value) h = a[2].value;
-            else if (a.length === 2 && a[1]?.kind) h = a[0];
-            if (h) {
-                const t = self.tmplMeta.get(h);
-                if (t) self.tmplMeta.delete(h);
-                self.add(method, pattern, h, t);
-            }
-            return a.length === 3 ? a[2] : a[0];
-        };
-
-        reg.template =
-            (t: string) =>
-            (...a: any[]) => {
-                let h: Function | undefined;
-                if (a.length === 1 && typeof a[0] === "function") h = a[0];
-                else if (a.length === 3 && a[2]?.value) h = a[2].value;
-                else if (a.length === 2 && a[1]?.kind) h = a[0];
-                if (h) self.add(method, pattern, h, t);
-                return a.length === 3 ? a[2] : a[0];
-            };
-        return reg;
-    }
-
-    private detect(args: any[], cb: (h: Function) => void) {
-        let h: Function | undefined;
-        if (args.length === 1 && typeof args[0] === "function") h = args[0];
-        else if (args.length === 3 && args[2]?.value) h = args[2].value;
-        else if (args.length === 2 && args[1]?.kind) h = args[0];
-        if (h) cb(h);
-        return args.length === 3 ? args[2] : args[0];
-    }
-
-    private register(method: string, pattern: string, ...rest: any[]) {
-        if (rest.length === 0) return this.decorator(method, pattern);
-        let handler: Function | undefined;
-        let tmpl: string | undefined;
-        if (typeof rest[0] === "function") {
-            handler = rest[0];
-        } else if (rest[0] && typeof rest[0] === "object" && typeof rest[1] === "function") {
-            tmpl = rest[0].template;
-            handler = rest[1];
+    private resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
+        if (typeof arg1 === "function") {
+            return [arg1, undefined];
         }
-        if (handler) {
-            const t = tmpl || this.tmplMeta.get(handler);
-            if (t) this.tmplMeta.delete(handler);
-            this.add(method, pattern, handler, t);
-        }
-        return handler;
+        return [arg2!, arg1];
     }
 
-    get = (pattern: string, ...rest: any[]) => this.register("GET", pattern, ...rest);
-    post = (pattern: string, ...rest: any[]) => this.register("POST", pattern, ...rest);
-    put = (pattern: string, ...rest: any[]) => this.register("PUT", pattern, ...rest);
-    delete = (pattern: string, ...rest: any[]) => this.register("DELETE", pattern, ...rest);
-    patch = (pattern: string, ...rest: any[]) => this.register("PATCH", pattern, ...rest);
-    options = (pattern: string, ...rest: any[]) => this.register("OPTIONS", pattern, ...rest);
-    head = (pattern: string, ...rest: any[]) => this.register("HEAD", pattern, ...rest);
+    get(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("GET", pattern, handler, tmpl);
+    }
 
-    template =
-        (tmpl: string) =>
-        (...a: any[]) =>
-            this.detect(a, (h) => this.tmplMeta.set(h, tmpl));
+    post(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("POST", pattern, handler, tmpl);
+    }
 
-    middleware =
-        (pattern: string) =>
-        (...a: any[]) =>
-            this.detect(a, (h) => {
-                this.middlewares.push({ pattern, urlp: new URLPattern({ pathname: pattern }), handler: h });
-            });
+    put(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("PUT", pattern, handler, tmpl);
+    }
 
-    error =
-        (template?: string) =>
-        (...a: any[]) =>
-            this.detect(a, (h) => {
-                this.errDef = { template, handler: h };
-            });
+    delete(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("DELETE", pattern, handler, tmpl);
+    }
+
+    patch(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("PATCH", pattern, handler, tmpl);
+    }
+
+    options(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("OPTIONS", pattern, handler, tmpl);
+    }
+
+    head(pattern: string, arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.add("HEAD", pattern, handler, tmpl);
+    }
+
+    use(pattern: string, handler: Function) {
+        this.middlewares.push({ pattern, urlp: new URLPattern({ pathname: pattern }), handler });
+    }
+
+    error(arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.errDef = { template: tmpl, handler };
+    }
 
     route(prefix: string, sub: Bunny) {
-        for (const r of sub.routes) this.add(r.method, joinPath(prefix, r.pattern), r.handler, r.template);
+        for (const r of sub.routes) {
+            this.add(r.method, joinPath(prefix, r.pattern), r.handler, r.template);
+        }
         for (const m of sub.middlewares) {
             const p = joinPath(prefix, m.pattern);
             this.middlewares.push({ pattern: p, urlp: new URLPattern({ pathname: p }), handler: m.handler });
         }
-        if (sub.errDef && !this.errDef) this.errDef = sub.errDef;
+        if (sub.errDef && !this.errDef) {
+            this.errDef = sub.errDef;
+        }
     }
 
     static(webPath: string, localPath: string) {
         const pattern = webPath + "/:rest*";
-        this.add("GET", pattern, async (c: Context) => {
+        const self = this;
+        function handler(c: Context) {
             let filePath = (c.params.rest || "").replace(/^\/+/, "");
             if (filePath.includes("..") || filePath.includes("~")) {
                 return new Response("Forbidden", { status: 403 });
             }
-
             const fullPath = resolve(localPath, filePath);
             const file = Bun.file(fullPath);
-            if (!(await file.exists())) {
-                if (!filePath) {
-                    const idx = Bun.file(resolve(fullPath, "index.html"));
-                    if (await idx.exists()) return serveFile(c.req, idx);
+            return (async () => {
+                if (!(await file.exists())) {
+                    if (!filePath) {
+                        const idx = Bun.file(resolve(fullPath, "index.html"));
+                        if (await idx.exists()) return serveFile(c.req, idx);
+                    }
+                    return new Response("Not Found", { status: 404 });
                 }
-                return new Response("Not Found", { status: 404 });
-            }
-            return serveFile(c.req, file);
-        });
+                return serveFile(c.req, file);
+            })();
+        }
+        self.add("GET", pattern, handler);
     }
 
     engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
@@ -209,7 +225,7 @@ export class Bunny {
         const params: Record<string, string> = {};
         if (match?.pathname?.groups) Object.assign(params, match.pathname.groups);
 
-        const ctx: Context = { req, params };
+        const ctx = new Context(req, params);
         const mws = this.middlewares.filter((m) => m.urlp.test(url));
         let result: any;
 
@@ -225,9 +241,12 @@ export class Bunny {
             await compose(0);
             if (route.template && this.stache) {
                 const html = await this.stache.view(route.template, result);
-                return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+                return new Response(html, {
+                    status: ctx.responseStatus,
+                    headers: { ...ctx.responseHeaders, "Content-Type": "text/html; charset=utf-8" },
+                });
             }
-            return toResponse(result);
+            return toResponse(result, ctx);
         } catch (e: any) {
             return this.onError(e, ctx);
         }
@@ -241,9 +260,12 @@ export class Bunny {
         const status = e instanceof HttpError ? e.status : 500;
         if (this.errDef.template && this.stache) {
             const html = await this.stache.view(this.errDef.template, result);
-            return new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
+            return new Response(html, {
+                status,
+                headers: { ...ctx.responseHeaders, "Content-Type": "text/html; charset=utf-8" },
+            });
         }
-        return toResponse(result, status);
+        return toResponse(result, ctx, status);
     }
 }
 
@@ -257,20 +279,25 @@ function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
     });
 }
 
-function toResponse(val: any, status?: number): Response {
+function toResponse(val: any, ctx?: Context, overrideStatus?: number): Response {
     if (val instanceof Response) {
-        return status ? new Response(val.body, { status, headers: val.headers }) : val;
+        return val;
     }
+    const status = overrideStatus ?? ctx?.responseStatus ?? 200;
+    const headers = { ...ctx?.responseHeaders };
     if (val == null) {
-        return new Response(null, { status: 204 });
+        return new Response(null, { status: 204, headers });
     }
     if (typeof val === "string") {
-        return new Response(val, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        return new Response(val, { status, headers: { ...headers, "Content-Type": "text/html; charset=utf-8" } });
     }
     if (typeof val === "object") {
-        return Response.json(val, status ? { status } : undefined);
+        return new Response(JSON.stringify(val), {
+            status,
+            headers: { ...headers, "Content-Type": "application/json" },
+        });
     }
-    return new Response(String(val));
+    return new Response(String(val), { status, headers });
 }
 
 function joinPath(a: string, b: string): string {
