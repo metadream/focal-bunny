@@ -110,32 +110,31 @@ export class Bunny {
 
     fetch = async (req: Request): Promise<Response> => {
         const url = new URL(req.url);
-        const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
-
-        if (!route) {
-            if (this.routes.some((r) => r.urlp.test(url))) {
-                return new Response("Method Not Allowed", { status: 405 });
-            }
-            return new Response("Not Found", { status: 404 });
-        }
-
-        const match = route.urlp.exec(url);
         const params: Record<string, string> = {};
-        if (match?.pathname?.groups) Object.assign(params, match.pathname.groups);
-
         const ctx = new Context(req, params);
-        const mws = this.middlewares.filter((m) => m.urlp.test(url));
-        let result: any;
-
-        const compose = async (i: number): Promise<void> => {
-            if (i < mws.length) {
-                await mws[i].handler(ctx, () => compose(i + 1));
-            } else {
-                result = await route.handler(ctx);
-            }
-        };
 
         try {
+            const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
+            if (!route) {
+                if (this.routes.some((r) => r.urlp.test(url))) {
+                    throw new HttpError(405);
+                }
+                throw new HttpError(404);
+            }
+
+            const match = route.urlp.exec(url);
+            if (match?.pathname?.groups) Object.assign(params, match.pathname.groups);
+
+            let result: any;
+            const mws = this.middlewares.filter((m) => m.urlp.test(url));
+            const compose = async (i: number): Promise<void> => {
+                if (i < mws.length) {
+                    await mws[i].handler(ctx, () => compose(i + 1));
+                } else {
+                    result = await route.handler(ctx);
+                }
+            };
+
             await compose(0);
             if (route.template && this.stache) {
                 const html = await this.stache.view(route.template, result);
@@ -162,11 +161,6 @@ export class Bunny {
         });
     }
 
-    error(arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
-        this.errDef = { template: tmpl, handler };
-    }
-
     route(prefix: string, sub: Bunny) {
         for (const r of sub.routes) {
             this.addRoute(r.method, joinPath(prefix, r.pattern), r.handler, r.template);
@@ -182,30 +176,36 @@ export class Bunny {
 
     static(webPath: string, localPath: string) {
         const pattern = webPath + "/:rest*";
-        const self = this;
-        function handler(c: Context) {
+
+        this.addRoute("GET", pattern, (c: Context) => {
             let filePath = (c.params.rest || "").replace(/^\/+/, "");
             if (filePath.includes("..") || filePath.includes("~")) {
-                return new Response("Forbidden", { status: 403 });
+                throw new HttpError(403);
             }
+
             const fullPath = resolve(localPath, filePath);
             const file = Bun.file(fullPath);
+
             return (async () => {
                 if (!(await file.exists())) {
                     if (!filePath) {
                         const idx = Bun.file(resolve(fullPath, "index.html"));
                         if (await idx.exists()) return serveFile(c.req, idx);
                     }
-                    return new Response("Not Found", { status: 404 });
+                    throw new HttpError(404);
                 }
                 return serveFile(c.req, file);
             })();
-        }
-        self.addRoute("GET", pattern, handler);
+        });
     }
 
     engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
         this.stache = new Stache(tmplRoot, globalVars);
+    }
+
+    error(arg1: Function | string, arg2?: Function) {
+        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        this.errDef = { template: tmpl, handler };
     }
 
     private routeFor(method: string) {
@@ -238,8 +238,10 @@ export class Bunny {
         if (!this.errDef) {
             return new Response(e.message || "Internal Server Error", { status: 500 });
         }
+
         const result = await this.errDef.handler(e, ctx);
         const status = e instanceof HttpError ? e.status : 500;
+
         if (this.errDef.template && this.stache) {
             const html = await this.stache.view(this.errDef.template, result);
             return new Response(html, {
