@@ -86,13 +86,15 @@ export class Context {
         });
     }
 
-    get responseStatus() {
+    get responseStatus(): number {
         return this.resStatus;
     }
-    get responseHeaders() {
+    get responseHeaders(): Record<string, string> {
         return this.resHeaders;
     }
 }
+
+type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 
 export class Bunny {
     private routes: RouteDef[] = [];
@@ -100,13 +102,13 @@ export class Bunny {
     private errDef?: ErrorDef;
     private stache?: Stache;
 
-    get = this.routeFor("GET");
-    post = this.routeFor("POST");
-    put = this.routeFor("PUT");
-    delete = this.routeFor("DELETE");
-    patch = this.routeFor("PATCH");
-    options = this.routeFor("OPTIONS");
-    head = this.routeFor("HEAD");
+    get: RouteMethod = this.routeFor("GET");
+    post: RouteMethod = this.routeFor("POST");
+    put: RouteMethod = this.routeFor("PUT");
+    delete: RouteMethod = this.routeFor("DELETE");
+    patch: RouteMethod = this.routeFor("PATCH");
+    options: RouteMethod = this.routeFor("OPTIONS");
+    head: RouteMethod = this.routeFor("HEAD");
 
     fetch = async (req: Request): Promise<Response> => {
         const url = new URL(req.url);
