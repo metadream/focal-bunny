@@ -248,11 +248,3 @@ export default app;
 | `c.html(str)` | HTML 响应 |
 | `c.status(code)` | 设置状态码（链式） |
 | `c.header(name, value)` | 设置响应头（链式） |
-
----
-
-## 发布到 JSR
-
-```bash
-bunx jsr publish
-```

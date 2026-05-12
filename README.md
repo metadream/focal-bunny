@@ -248,11 +248,3 @@ export default app;
 | `c.html(str)` | HTML response |
 | `c.status(code)` | Set status code (chainable) |
 | `c.header(name, value)` | Set response header (chainable) |
-
----
-
-## Publishing to JSR
-
-```bash
-bunx jsr publish
-```
