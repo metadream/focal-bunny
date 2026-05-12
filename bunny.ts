@@ -110,8 +110,7 @@ export class Bunny {
 
     fetch = async (req: Request): Promise<Response> => {
         const url = new URL(req.url);
-        const sorted = this.routes.filter((r) => r.method === req.method).sort((a, b) => b.priority - a.priority);
-        const route = sorted.find((r) => r.urlp.test(url));
+        const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
 
         if (!route) {
             if (this.routes.some((r) => r.urlp.test(url))) {
@@ -225,6 +224,7 @@ export class Bunny {
             template,
             priority: getRoutePriority(pattern),
         });
+        this.routes.sort((a, b) => b.priority - a.priority);
     }
 
     private resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
