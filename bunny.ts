@@ -100,24 +100,6 @@ export class Bunny {
     private errDef?: ErrorDef;
     private stache?: Stache;
 
-    private add(method: string, pattern: string, handler: Function, template?: string) {
-        this.routes.push({
-            method,
-            pattern,
-            urlp: new URLPattern({ pathname: pattern }),
-            handler,
-            template,
-            priority: getRoutePriority(pattern),
-        });
-    }
-
-    private resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
-        if (typeof arg1 === "function") {
-            return [arg1, undefined];
-        }
-        return [arg2!, arg1];
-    }
-
     get(pattern: string, arg1: Function | string, arg2?: Function) {
         const [handler, tmpl] = this.resolveArgs(arg1, arg2);
         this.add("GET", pattern, handler, tmpl);
@@ -158,7 +140,11 @@ export class Bunny {
             handler = pattern;
             pattern = "/*";
         }
-        this.middlewares.push({ pattern: pattern as string, urlp: new URLPattern({ pathname: pattern as string }), handler: handler! });
+        this.middlewares.push({
+            pattern: pattern as string,
+            urlp: new URLPattern({ pathname: pattern as string }),
+            handler: handler!,
+        });
     }
 
     error(arg1: Function | string, arg2?: Function) {
@@ -249,6 +235,24 @@ export class Bunny {
             return this.onError(e, ctx);
         }
     };
+
+    private add(method: string, pattern: string, handler: Function, template?: string) {
+        this.routes.push({
+            method,
+            pattern,
+            urlp: new URLPattern({ pathname: pattern }),
+            handler,
+            template,
+            priority: getRoutePriority(pattern),
+        });
+    }
+
+    private resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
+        if (typeof arg1 === "function") {
+            return [arg1, undefined];
+        }
+        return [arg2!, arg1];
+    }
 
     private async onError(e: any, ctx: Context): Promise<Response> {
         if (!this.errDef) {
