@@ -14,15 +14,6 @@ const STATUS_TEXT: Record<number, string> = {
     504: "Gateway Timeout",
 };
 
-export class HttpError extends Error {
-    status: number;
-    constructor(status: number, message?: string) {
-        super(message || STATUS_TEXT[status] || "Error");
-        this.name = "HttpError";
-        this.status = status;
-    }
-}
-
 interface RouteDef {
     method: string;
     pattern: string;
@@ -41,6 +32,15 @@ interface MiddlewareDef {
 interface ErrorDef {
     template?: string;
     handler: Function;
+}
+
+export class HttpError extends Error {
+    status: number;
+    constructor(status: number, message?: string) {
+        super(message || STATUS_TEXT[status] || "Error");
+        this.name = "HttpError";
+        this.status = status;
+    }
 }
 
 export class Context {
@@ -86,18 +86,12 @@ export class Context {
         });
     }
 
-    get responseStatus() { return this.resStatus; }
-    get responseHeaders() { return this.resHeaders; }
-}
-
-function getRoutePriority(pattern: string): number {
-    let score = 0;
-    for (const seg of pattern.replace(/^\//, "").split("/")) {
-        if (!seg || seg === "*") score += 0;
-        else if (seg.startsWith(":")) score += 1;
-        else score += 2;
+    get responseStatus() {
+        return this.resStatus;
     }
-    return score;
+    get responseHeaders() {
+        return this.resHeaders;
+    }
 }
 
 export class Bunny {
@@ -267,6 +261,16 @@ export class Bunny {
         }
         return toResponse(result, ctx, status);
     }
+}
+
+function getRoutePriority(pattern: string): number {
+    let score = 0;
+    for (const seg of pattern.replace(/^\//, "").split("/")) {
+        if (!seg || seg === "*") score += 0;
+        else if (seg.startsWith(":")) score += 1;
+        else score += 2;
+    }
+    return score;
 }
 
 function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
