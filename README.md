@@ -2,9 +2,7 @@
 
 [中文](README.zh.md) | English
 
-A web framework built on [Bun](https://bun.sh) native APIs with zero external dependencies. Supports routing, middleware, template engine, static files, and error handling.
-
----
+A web framework built on [Bun](https://bun.sh) native APIs with zero external dependencies. Supports routing groups, middleware, template engine, static files, and error handling.
 
 ## Installation
 
@@ -19,9 +17,7 @@ bunx jsr add @focal/bunny
 import { Bunny } from "jsr:@focal/bunny";
 
 const app = new Bunny();
-
-app.get("/", async (c) => c.text("Hello World!"));
-
+app.get("/", async (c) => "Hello World!");
 export default app;
 ```
 
@@ -30,8 +26,6 @@ Run:
 ```bash
 bun run server.ts
 ```
-
----
 
 ## Routing
 
@@ -51,7 +45,7 @@ Path parameters (`:param`) via `c.params`:
 
 ```typescript
 app.get("/users/:id", async (c) => {
-    return c.json({ id: +c.params.id });
+    return { id: c.params.id };
 });
 // GET /users/42 → {"id":42}
 ```
@@ -60,7 +54,7 @@ Query parameters via `c.query`:
 
 ```typescript
 app.get("/search", async (c) => {
-    return c.json({ q: c.query.q, page: c.query.page });
+    return { q: c.query.q, page: c.query.page };
 });
 // GET /search?q=bunny&page=1 → {"q":"bunny","page":"1"}
 ```
@@ -77,21 +71,19 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 Static paths > `:param(regex)` paths > `:param` paths > `*` wildcards, regardless of registration order.
 
----
-
 ## Response
 
 Return any value directly from the route handler — no need to call context methods:
 
 ```typescript
-app.get("/text", async (c) => "Hello World");         // text/html
-app.get("/json", async (c) => ({ key: "value" }));     // application/json
-app.get("/null", async (c) => null);                    // 204 No Content
-app.get("/response", async (c) => new Response("ok")); // Raw Response
-app.get("/image", async (c) => Bun.file("./photo.png")); // Blob → auto Content-Type
+app.get("/text", async (c) => "Hello World");             // text/html
+app.get("/json", async (c) => ({ key: "value" }));        // application/json
+app.get("/null", async (c) => null);                      // 204 No Content
+app.get("/response", async (c) => new Response("ok"));    // Raw Response
+app.get("/image", async (c) => Bun.file("./photo.png"));  // Blob → auto Content-Type
 app.get("/video", async (c) => {
     const file = Bun.file("./video.mp4");
-    return file.stream();                                  // ReadableStream
+    return file.stream();                                 // ReadableStream
 });
 ```
 
@@ -101,21 +93,17 @@ Or use the `Context` API for full control:
 c.text("ok");                       // Plain text
 c.html("<h1>Title</h1>");           // HTML
 c.json({ key: "value" });           // JSON
-c.status(201);                      // Set status code (chainable)
-c.header("X-Version", "1.0");       // Set response header (chainable)
+c.status(201);                      // Set status code
+c.header("X-Version", "1.0");       // Set response header
 ```
 
 Chaining:
 
 ```typescript
 app.get("/created", async (c) => {
-    c.status(201);
-    c.header("X-ID", "123");
-    return c.json({ message: "created" });
+    return c.status(201).header("X-Version", "1.0").json({ message: "created" });
 });
 ```
-
----
 
 ## Middleware
 
@@ -139,22 +127,18 @@ app.use(logger);
 app.use("/admin/*", auth);
 ```
 
----
-
 ## Route Grouping
 
 Create a separate `Bunny` instance and mount it with `route()`:
 
 ```typescript
 const api = new Bunny();
-api.get("/users", async (c) => c.json([{ id: 1, name: "Alice" }]));
+api.get("/users", async (c) => ([{ id: 1, name: "Alice" }]));
 
 app.route("/v1", api);  // → /v1/users
 ```
 
-Middleware and error handlers from the sub-instance are merged in. The sub-instance's error handler is only used if the parent has not set one.
-
----
+Middleware and error handlers from the sub-instance are only inherited if the parent has not set one.
 
 ## Session
 
@@ -164,18 +148,18 @@ In-memory session support:
 app.get("/login", async (c) => {
     c.session.set("user", { id: 1, name: "Alice" });
     c.session.set("lang", "en");
-    return c.text("Logged in");
+    return "Logged in";
 });
 
 app.get("/profile", async (c) => {
     const user = c.session.get("user");
-    return user ? c.json(user) : c.text("Not logged in");
+    return user ? user : "Not logged in";
 });
 
 app.get("/logout", async (c) => {
     c.session.remove("user");      // Remove a single key
     c.session.destroy();           // Clear all data & expire cookie
-    return c.text("Logged out");
+    return "Logged out";
 });
 ```
 
@@ -186,11 +170,9 @@ app.get("/logout", async (c) => {
 | `remove(key)` | Remove a single key |
 | `destroy()` | Clear all data and expire the session cookie |
 
-Session ID is stored in a `sid` cookie (`HttpOnly`, `SameSite=Lax`). Data is held in memory by the default `SessionStore` — restarting the server clears all sessions.
+Session ID is stored in a `SESS_ID` cookie (`HttpOnly`, `SameSite=Lax`). Data is held in memory by the default `SessionStore` — restarting the server clears all sessions.
 
----
-
-## Static Files
+## Static Assets
 
 ```typescript
 app.static("/assets", "./public");
@@ -199,9 +181,7 @@ app.static("/assets", "./public");
 
 Automatic ETag, `304` cache negotiation, `206` Partial Content (Range requests for video seeking), directory index (`index.html`), and path traversal protection (`..` and `~` blocked).
 
----
-
-## Template Engine (Stache)
+## Template Engine
 
 ```typescript
 app.engine("./templates", { appName: "MyApp", year: 2026 });
@@ -217,8 +197,6 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 | `{{~ arr: val}}` | for loop |
 | `{{~ arr: val : idx}}` | for loop with index |
 | `{{@ file}}` | Include partial |
-
----
 
 ## Error Handling
 
@@ -247,25 +225,21 @@ app.error(async (e, c) => {
 
 Error response behavior: if the original route that caused the error had a template, the error template is rendered (HTML). Otherwise, the error handler's return value is returned as-is (JSON for objects, text for strings). Framework-level errors (404, 405, static file 403/404) also flow through the error handler.
 
----
-
 ## Full Example
 
 ```typescript
 // server.ts
 import { Bunny, HttpError, type Context } from "jsr:@focal/bunny";
 import routes from "./src/routes";
-import timer from "./src/middlewars";
+import logger from "./src/middlewars";
 import auth from "./src/auth";
 import apis from "./src/apis";
 
 const app = new Bunny();
-const dir = import.meta.dir!;
+app.static("/assets", "./assets");
+app.engine("./templates", { appName: "Bunny", year: 2026 });
 
-app.static("/assets", dir + "/assets");
-app.engine(dir + "/templates", { appName: "Bunny", year: 2026 });
-
-app.use(timer);
+app.use(logger);
 app.use("/protected/*", auth);
 
 app.route("/", routes);
@@ -278,8 +252,6 @@ app.error("error.html", async (e, c) => {
 
 export default app;
 ```
-
----
 
 ## API Reference
 
@@ -299,7 +271,7 @@ export default app;
 ### Context
 
 | Method / Property | Description |
-|---|---|---|
+|---|---|
 | `c.req` | Raw Request object |
 | `c.params` | Path parameters |
 | `c.query` | Query string parameters |
