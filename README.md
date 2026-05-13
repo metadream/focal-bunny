@@ -75,7 +75,7 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 ### Priority
 
-Static paths > `:param` paths > `*` wildcards, regardless of registration order.
+Static paths > `:param(regex)` paths > `:param` paths > `*` wildcards, regardless of registration order.
 
 ---
 
@@ -88,6 +88,11 @@ app.get("/text", async (c) => "Hello World");         // text/html
 app.get("/json", async (c) => ({ key: "value" }));     // application/json
 app.get("/null", async (c) => null);                    // 204 No Content
 app.get("/response", async (c) => new Response("ok")); // Raw Response
+app.get("/image", async (c) => Bun.file("./photo.png")); // Blob → auto Content-Type
+app.get("/video", async (c) => {
+    const file = Bun.file("./video.mp4");
+    return file.stream();                                  // ReadableStream
+});
 ```
 
 Or use the `Context` API for full control:
@@ -192,7 +197,7 @@ app.static("/assets", "./public");
 // GET /assets/test.txt → ./public/test.txt
 ```
 
-Automatic ETag, `304` cache negotiation, directory index (`index.html`), and path traversal protection (`..` and `~` blocked).
+Automatic ETag, `304` cache negotiation, `206` Partial Content (Range requests for video seeking), directory index (`index.html`), and path traversal protection (`..` and `~` blocked).
 
 ---
 

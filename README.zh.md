@@ -75,7 +75,7 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 ### 优先级
 
-静态路径 > 参数路径 > 通配符，与注册顺序无关。
+静态路径 > 含正则的参数路径（`:id(\\d+)`）> 普通参数路径 > 通配符，与注册顺序无关。
 
 ---
 
@@ -88,6 +88,11 @@ app.get("/text", async (c) => "Hello World");         // text/html
 app.get("/json", async (c) => ({ key: "value" }));     // application/json
 app.get("/null", async (c) => null);                    // 204 No Content
 app.get("/response", async (c) => new Response("ok")); // 原始 Response
+app.get("/image", async (c) => Bun.file("./photo.png")); // Blob → 自动识别 Content-Type
+app.get("/video", async (c) => {
+    const file = Bun.file("./video.mp4");
+    return file.stream();                                  // ReadableStream
+});
 ```
 
 也可以使用 `Context` API 进行精细控制：
@@ -192,7 +197,7 @@ app.static("/assets", "./public");
 // GET /assets/test.txt → ./public/test.txt
 ```
 
-自动 ETag、`304` 缓存协商、目录索引（自动寻找 index.html）、路径穿越防护（`..` 和 `~` 被拦截）。
+自动 ETag、`304` 缓存协商、`206` Partial Content（Range 请求，支持视频拖拽进度条）、目录索引（自动寻找 index.html）、路径穿越防护（`..` 和 `~` 被拦截）。
 
 ---
 
