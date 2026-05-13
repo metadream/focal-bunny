@@ -37,8 +37,14 @@ interface ErrorDef {
     handler: Function;
 }
 
+/** HTTP error with a numeric status code. Thrown in route handlers to trigger the error handler. */
 export class HttpError extends Error {
+    /** HTTP status code (e.g. 400, 404, 500). */
     status: number;
+    /**
+     * @param status HTTP status code
+     * @param message Error message; defaults to the standard status text
+     */
     constructor(status: number, message?: string) {
         super(message || STATUS_TEXT[status] || "Error");
         this.name = "HttpError";
@@ -46,21 +52,28 @@ export class HttpError extends Error {
     }
 }
 
+/** In-memory session storage. Used internally by `Context.session`. */
 export class SessionStore {
     private sessions = new Map<string, Record<string, unknown>>();
 
+    /** Get session data by ID. */
     get(sid: string): Record<string, unknown> | undefined {
         return this.sessions.get(sid);
     }
+    /** Set session data by ID. */
     set(sid: string, data: Record<string, unknown>): void {
         this.sessions.set(sid, data);
     }
 }
 
 const sessionStore = new SessionStore();
+/** Per-request context passed to route handlers and middleware. */
 export class Context {
+    /** Raw incoming `Request` object. */
     req: Request;
+    /** Path parameters extracted from the matched route pattern. */
     params: Record<string, string>;
+    /** Parsed query-string parameters from the URL. */
     query: Record<string, string>;
     private resStatus = 200;
     private resHeaders: Record<string, string> = {};
@@ -74,6 +87,7 @@ export class Context {
         this.query = Object.fromEntries(new URL(req.url).searchParams);
     }
 
+    /** Read and write session data. Initializes the session lazily on first access. */
     get session(): {
         get: <T>(key: string) => T | undefined;
         set: (key: string, value: unknown) => void;
@@ -112,16 +126,19 @@ export class Context {
         };
     }
 
+    /** Set the HTTP response status code. Chainable. */
     status(code: number): this {
         this.resStatus = code;
         return this;
     }
 
+    /** Set a response header. Chainable. */
     header(name: string, value: string): this {
         this.resHeaders[name] = value;
         return this;
     }
 
+    /** Return a JSON response. Automatically sets `Content-Type: application/json`. */
     json(obj: any): Response {
         return new Response(JSON.stringify(obj), {
             status: this.resStatus,
@@ -129,6 +146,7 @@ export class Context {
         });
     }
 
+    /** Return an HTML response. Automatically sets `Content-Type: text/html; charset=utf-8`. */
     html(str: string): Response {
         return new Response(str, {
             status: this.resStatus,
@@ -136,6 +154,7 @@ export class Context {
         });
     }
 
+    /** Return a plain-text response. */
     text(str: string): Response {
         return new Response(str, {
             status: this.resStatus,
@@ -143,28 +162,39 @@ export class Context {
         });
     }
 
+    /** The response status code (read-only, set via `.status()`). */
     get responseStatus(): number {
         return this.resStatus;
     }
+    /** The response headers (read-only, set via `.header()`). */
     get responseHeaders(): Record<string, string> {
         return this.resHeaders;
     }
 }
 
+/** Main application class. Create an instance, register routes/middleware, then export it. */
 export class Bunny {
     private routes: RouteDef[] = [];
     private middlewares: MiddlewareDef[] = [];
     private errDef?: ErrorDef;
     private stache?: Stache;
 
+    /** Register a GET route. */
     get: RouteMethod = this.routeFor("GET");
+    /** Register a POST route. */
     post: RouteMethod = this.routeFor("POST");
+    /** Register a PUT route. */
     put: RouteMethod = this.routeFor("PUT");
+    /** Register a DELETE route. */
     delete: RouteMethod = this.routeFor("DELETE");
+    /** Register a PATCH route. */
     patch: RouteMethod = this.routeFor("PATCH");
+    /** Register an OPTIONS route. */
     options: RouteMethod = this.routeFor("OPTIONS");
+    /** Register a HEAD route. */
     head: RouteMethod = this.routeFor("HEAD");
 
+    /** Fetch handler. Called automatically by Bun when the app is exported. */
     fetch = async (req: Request): Promise<Response> => {
         const url = new URL(req.url);
         const params: Record<string, string> = {};
@@ -208,6 +238,10 @@ export class Bunny {
         }
     };
 
+    /**
+     * Register a middleware. If called with a single function, it applies globally (`/*`).
+     * If called with a pattern and a function, it only matches the given path.
+     */
     use(pattern: string | Function, handler?: Function) {
         if (typeof pattern === "function") {
             handler = pattern;
@@ -220,6 +254,7 @@ export class Bunny {
         });
     }
 
+    /** Mount a sub-router (another `Bunny` instance) at the given prefix. */
     route(prefix: string, sub: Bunny) {
         for (const r of sub.routes) {
             this.addRoute(r.method, joinPath(prefix, r.pattern), r.handler, r.template);
@@ -233,6 +268,7 @@ export class Bunny {
         }
     }
 
+    /** Serve static files from a local directory under a URL path prefix. */
     static(webPath: string, localPath: string) {
         const pattern = webPath + "/:rest*";
 
@@ -258,10 +294,12 @@ export class Bunny {
         });
     }
 
+    /** Configure the Stache template engine with a root directory and optional global variables. */
     engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
         this.stache = new Stache(tmplRoot, globalVars);
     }
 
+    /** Register an error handler. Can be called with a template path and handler, or a handler alone. */
     error(arg1: Function | string, arg2?: Function) {
         const [handler, tmpl] = this.resolveArgs(arg1, arg2);
         this.errDef = { template: tmpl, handler };
