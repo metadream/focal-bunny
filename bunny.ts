@@ -316,8 +316,9 @@ function getRoutePriority(pattern: string): number {
     let score = 0;
     for (const seg of pattern.replace(/^\//, "").split("/")) {
         if (!seg || seg === "*") score += 0;
+        else if (seg.startsWith(":") && seg.includes("(")) score += 2;
         else if (seg.startsWith(":")) score += 1;
-        else score += 2;
+        else score += 3;
     }
     return score;
 }
