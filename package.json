@@ -4,6 +4,7 @@
   "description": "A lightweight Bun web framework with zero dependencies",
   "repository": "https://github.com/metadream/focal-bunny.git",
   "author": "Marco <x@zerg.cc>",
+  "module": "bunny.ts",
   "devDependencies": {
     "@types/bun": "^1.3.13"
   }
