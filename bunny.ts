@@ -1,7 +1,9 @@
 import { resolve } from "path";
 import { Stache } from "./stache";
 
+type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 const SESSION_COOKIE = "SESS_ID";
+
 const STATUS_TEXT: Record<number, string> = {
     400: "Bad Request",
     401: "Unauthorized",
@@ -14,8 +16,6 @@ const STATUS_TEXT: Record<number, string> = {
     503: "Service Unavailable",
     504: "Gateway Timeout",
 };
-
-type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 
 interface RouteDef {
     method: string;
@@ -328,9 +328,29 @@ function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
     if (req.headers.get("If-None-Match") === etag) {
         return new Response(null, { status: 304 });
     }
-    return new Response(file, {
-        headers: { ETag: etag, "Cache-Control": "public, max-age=3600" },
-    });
+
+    const headers: Record<string, string> = {
+        ETag: etag,
+        "Cache-Control": "public, max-age=3600",
+        "Content-Type": file.type || "application/octet-stream",
+        "Accept-Ranges": "bytes",
+    };
+
+    const range = req.headers.get("Range");
+    if (range) {
+        const match = range.match(/bytes=(\d+)-(\d*)/);
+        if (match) {
+            const start = parseInt(match[1], 10);
+            const end = match[2] ? parseInt(match[2], 10) : file.size - 1;
+            if (start < file.size && end < file.size && start <= end) {
+                headers["Content-Range"] = `bytes ${start}-${end}/${file.size}`;
+                headers["Content-Length"] = String(end - start + 1);
+                return new Response(file.slice(start, end + 1), { status: 206, headers });
+            }
+        }
+    }
+
+    return new Response(file, { headers });
 }
 
 function toResponse(val: any, ctx?: Context, overrideStatus?: number): Response {
@@ -341,6 +361,15 @@ function toResponse(val: any, ctx?: Context, overrideStatus?: number): Response 
     const headers = { ...ctx?.responseHeaders };
     if (val == null) {
         return new Response(null, { status: 204, headers });
+    }
+    if (val instanceof ReadableStream) {
+        return new Response(val, { status, headers });
+    }
+    if (val instanceof Blob) {
+        return new Response(val, {
+            status,
+            headers: { ...headers, "Content-Type": val.type || "application/octet-stream" },
+        });
     }
     if (typeof val === "string") {
         return new Response(val, { status, headers: { ...headers, "Content-Type": "text/html; charset=utf-8" } });
