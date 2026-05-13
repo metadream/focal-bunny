@@ -2,9 +2,7 @@
 
 中文 | [English](README.md)
 
-基于 [Bun](https://bun.sh) 原生 API 的 Web 框架，无需外部依赖，支持路由分组、中间件、模板引擎、静态文件、错误处理。
-
----
+基于 [Bun](https://bun.sh) 原生 API 的 Web 框架，无外部依赖，支持路由分组、中间件、模板引擎、静态文件、错误处理。
 
 ## 安装
 
@@ -19,9 +17,7 @@ bunx jsr add @focal/bunny
 import { Bunny } from "jsr:@focal/bunny";
 
 const app = new Bunny();
-
-app.get("/", async (c) => c.text("Hello World!"));
-
+app.get("/", async (c) => "Hello World!");
 export default app;
 ```
 
@@ -30,8 +26,6 @@ export default app;
 ```bash
 bun run server.ts
 ```
-
----
 
 ## 路由
 
@@ -51,7 +45,7 @@ app.head("/path", handler);
 
 ```typescript
 app.get("/users/:id", async (c) => {
-    return c.json({ id: +c.params.id });
+    return { id: c.params.id };
 });
 // GET /users/42 → {"id":42}
 ```
@@ -60,7 +54,7 @@ app.get("/users/:id", async (c) => {
 
 ```typescript
 app.get("/search", async (c) => {
-    return c.json({ q: c.query.q, page: c.query.page });
+    return { q: c.query.q, page: c.query.page };
 });
 // GET /search?q=bunny&page=1 → {"q":"bunny","page":"1"}
 ```
@@ -77,21 +71,19 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 静态路径 > 含正则的参数路径（`:id(\\d+)`）> 普通参数路径 > 通配符，与注册顺序无关。
 
----
-
 ## 响应
 
 路由处理器可以直接返回任意值，无需调用 context 方法：
 
 ```typescript
-app.get("/text", async (c) => "Hello World");         // text/html
-app.get("/json", async (c) => ({ key: "value" }));     // application/json
-app.get("/null", async (c) => null);                    // 204 No Content
-app.get("/response", async (c) => new Response("ok")); // 原始 Response
-app.get("/image", async (c) => Bun.file("./photo.png")); // Blob → 自动识别 Content-Type
+app.get("/text", async (c) => "Hello World");             // text/html
+app.get("/json", async (c) => ({ key: "value" }));        // application/json
+app.get("/null", async (c) => null);                      // 204 No Content
+app.get("/response", async (c) => new Response("ok"));    // 原始 Response
+app.get("/image", async (c) => Bun.file("./photo.png"));  // Blob → 自动识别 Content-Type
 app.get("/video", async (c) => {
     const file = Bun.file("./video.mp4");
-    return file.stream();                                  // ReadableStream
+    return file.stream();                                 // ReadableStream
 });
 ```
 
@@ -109,13 +101,9 @@ c.header("X-Version", "1.0");       // 设置响应头
 
 ```typescript
 app.get("/created", async (c) => {
-    c.status(201);
-    c.header("X-ID", "123");
-    return c.json({ message: "created" });
+    return c.status(201).header("X-Version", "1.0").json({ message: "created" });
 });
 ```
-
----
 
 ## 中间件
 
@@ -139,22 +127,18 @@ app.use(logger);
 app.use("/admin/*", auth);
 ```
 
----
-
 ## 路由分组
 
 创建独立 `Bunny` 实例，通过 `route()` 挂载：
 
 ```typescript
 const api = new Bunny();
-api.get("/users", async (c) => c.json([{ id: 1, name: "Alice" }]));
+api.get("/users", async (c) => ([{ id: 1, name: "Alice" }]));
 
 app.route("/v1", api);  // → /v1/users
 ```
 
 分组内的中间件和错误处理器**仅当主应用未设置时**自动继承。
-
----
 
 ## 会话 (Session)
 
@@ -164,18 +148,18 @@ app.route("/v1", api);  // → /v1/users
 app.get("/login", async (c) => {
     c.session.set("user", { id: 1, name: "Alice" });
     c.session.set("lang", "zh");
-    return c.text("已登录");
+    return "已登录";
 });
 
 app.get("/profile", async (c) => {
     const user = c.session.get("user");
-    return user ? c.json(user) : c.text("未登录");
+    return user ? user : "未登录";
 });
 
 app.get("/logout", async (c) => {
     c.session.remove("user");      // 删除单个字段
     c.session.destroy();           // 清空所有数据并过期 cookie
-    return c.text("已退出");
+    return "已退出";
 });
 ```
 
@@ -186,11 +170,9 @@ app.get("/logout", async (c) => {
 | `remove(key)` | 删除单个字段 |
 | `destroy()` | 清空所有数据并使 cookie 过期 |
 
-Session ID 通过 `sid` cookie（`HttpOnly`、`SameSite=Lax`）传递。数据存储在默认的 `SessionStore` 内存中，重启服务后所有会话将丢失。
+Session ID 通过 `SESS_ID` cookie（`HttpOnly`、`SameSite=Lax`）传递。数据存储在默认的 `SessionStore` 内存中，重启服务后所有会话将丢失。
 
----
-
-## 静态文件
+## 静态资源
 
 ```typescript
 app.static("/assets", "./public");
@@ -198,8 +180,6 @@ app.static("/assets", "./public");
 ```
 
 自动 ETag、`304` 缓存协商、`206` Partial Content（Range 请求，支持视频拖拽进度条）、目录索引（自动寻找 index.html）、路径穿越防护（`..` 和 `~` 被拦截）。
-
----
 
 ## 模板引擎
 
@@ -217,8 +197,6 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 | `{{~ arr: val}}` | for 循环 |
 | `{{~ arr: val : idx}}` | for 循环（带索引） |
 | `{{@ file}}` | 引入子模板 |
-
----
 
 ## 错误处理
 
@@ -247,25 +225,21 @@ app.error(async (e, c) => {
 
 错误响应行为：若抛出错误的原路由带有模板，则渲染错误模板（HTML）；否则返回错误处理器的原始结果（JSON/文本）。404、405、静态文件 403/404 等框架级错误也统一走错误处理器。
 
----
-
 ## 完整示例
 
 ```typescript
 // server.ts
 import { Bunny, HttpError, type Context } from "jsr:@focal/bunny";
 import routes from "./src/routes";
-import timer from "./src/middlewars";
+import logger from "./src/middlewars";
 import auth from "./src/auth";
 import apis from "./src/apis";
 
 const app = new Bunny();
-const dir = import.meta.dir!;
+app.static("/assets", "./assets");
+app.engine("./templates", { appName: "Bunny", year: 2026 });
 
-app.static("/assets", dir + "/assets");
-app.engine(dir + "/templates", { appName: "Bunny", year: 2026 });
-
-app.use(timer);
+app.use(logger);
 app.use("/protected/*", auth);
 
 app.route("/", routes);
@@ -278,8 +252,6 @@ app.error("error.html", async (e, c) => {
 
 export default app;
 ```
-
----
 
 ## API 一览
 
