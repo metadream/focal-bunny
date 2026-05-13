@@ -232,7 +232,7 @@ export class Bunny {
                     headers: { ...ctx.responseHeaders, "Content-Type": "text/html; charset=utf-8" },
                 });
             }
-            return toResponse(result, ctx);
+            return buildResponse(result, ctx);
         } catch (e: any) {
             return this.onError(e, ctx);
         }
@@ -346,7 +346,7 @@ export class Bunny {
                 headers: { ...ctx.responseHeaders, "Content-Type": "text/html; charset=utf-8" },
             });
         }
-        return toResponse(result, ctx, status);
+        return buildResponse(result, ctx, status);
     }
 }
 
@@ -391,12 +391,11 @@ function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
     return new Response(file, { headers });
 }
 
-function toResponse(val: any, ctx?: Context, overrideStatus?: number): Response {
-    if (val instanceof Response) {
-        return val;
-    }
+function buildResponse(val: any, ctx?: Context, overrideStatus?: number): Response {
+    if (val instanceof Response) return val;
     const status = overrideStatus ?? ctx?.responseStatus ?? 200;
     const headers = { ...ctx?.responseHeaders };
+
     if (val == null) {
         return new Response(null, { status: 204, headers });
     }
@@ -421,10 +420,6 @@ function toResponse(val: any, ctx?: Context, overrideStatus?: number): Response 
     return new Response(String(val), { status, headers });
 }
 
-function joinPath(a: string, b: string): string {
-    return a.replace(/\/+$/, "") + "/" + b.replace(/^\/+/, "");
-}
-
 function parseCookies(req: Request): Record<string, string> {
     const cookie = req.headers.get("Cookie") || "";
     const result: Record<string, string> = {};
@@ -433,4 +428,8 @@ function parseCookies(req: Request): Record<string, string> {
         if (i > 0) result[c.slice(0, i).trim()] = c.slice(i + 1).trim();
     }
     return result;
+}
+
+function joinPath(a: string, b: string): string {
+    return a.replace(/\/+$/, "") + "/" + b.replace(/^\/+/, "");
 }
