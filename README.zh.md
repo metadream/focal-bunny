@@ -14,7 +14,7 @@ bunx jsr add @focal/bunny
 ## 快速开始
 
 ```typescript
-import { Bunny } from "jsr:@focal/bunny";
+import { Bunny } from "@focal/bunny";
 
 const app = new Bunny();
 app.get("/", async (c) => "Hello World!");
@@ -110,7 +110,7 @@ app.get("/created", async (c) => {
 ### 全局中间件
 
 ```typescript
-import { type Context } from "jsr:@focal/bunny";
+import { type Context } from "@focal/bunny";
 
 async function logger(c: Context, next: () => Promise<void>) {
     const start = Date.now();
@@ -223,7 +223,7 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ## 错误处理
 
 ```typescript
-import { HttpError } from "jsr:@focal/bunny";
+import { HttpError } from "@focal/bunny";
 
 app.get("/error", async (c) => {
     throw new HttpError(400, "参数错误");
@@ -251,7 +251,7 @@ app.error(async (e, c) => {
 
 ```typescript
 // server.ts
-import { Bunny, HttpError, type Context } from "jsr:@focal/bunny";
+import { Bunny, HttpError, type Context } from "@focal/bunny";
 import routes from "./src/routes";
 import logger from "./src/middlewars";
 import auth from "./src/auth";

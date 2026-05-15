@@ -14,7 +14,7 @@ bunx jsr add @focal/bunny
 ## Quick Start
 
 ```typescript
-import { Bunny } from "jsr:@focal/bunny";
+import { Bunny } from "@focal/bunny";
 
 const app = new Bunny();
 app.get("/", async (c) => "Hello World!");
@@ -110,7 +110,7 @@ app.get("/created", async (c) => {
 ### Global Middleware
 
 ```typescript
-import { type Context } from "jsr:@focal/bunny";
+import { type Context } from "@focal/bunny";
 
 async function logger(c: Context, next: () => Promise<void>) {
     const start = Date.now();
@@ -223,7 +223,7 @@ Example template:
 ## Error Handling
 
 ```typescript
-import { HttpError } from "jsr:@focal/bunny";
+import { HttpError } from "@focal/bunny";
 
 app.get("/error", async (c) => {
     throw new HttpError(400, "Bad request");
@@ -251,7 +251,7 @@ Error response behavior: if the original route that caused the error had a templ
 
 ```typescript
 // server.ts
-import { Bunny, HttpError, type Context } from "jsr:@focal/bunny";
+import { Bunny, HttpError, type Context } from "@focal/bunny";
 import routes from "./src/routes";
 import logger from "./src/middlewars";
 import auth from "./src/auth";
