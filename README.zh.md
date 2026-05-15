@@ -27,6 +27,18 @@ export default app;
 bun run server.ts
 ```
 
+Bun 会自动检测到导出对象上的 `fetch` 方法，自动调用 `Bun.serve()`。无需显式启动服务器。
+
+如需自定义服务器参数（端口、主机名、TLS 等），可直接使用 `Bun.serve()`：
+
+```typescript
+// 方式 A：导出配置对象，指定端口
+export default { fetch: app.fetch, port: 3000 };
+
+// 方式 B：显式调用 Bun.serve
+Bun.serve({ fetch: app.fetch, port: 3000, hostname: "0.0.0.0" });
+```
+
 ## 路由
 
 ### HTTP 方法
@@ -61,7 +73,7 @@ app.get("/search", async (c) => {
 
 ### 模板渲染
 
-第二个参数传入模板文件名：
+第二个参数传入模板文件名（需要先调用 `app.engine()`，见[模板引擎](#模板引擎)）：
 
 ```typescript
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
@@ -127,6 +139,8 @@ app.use(logger);
 app.use("/admin/*", auth);
 ```
 
+在中间件中不调用 `next()` 会终止链——路由处理器及后续中间件都不会执行。这是实现鉴权、限流等功能的机制。
+
 ## 路由分组
 
 创建独立 `Bunny` 实例，通过 `route()` 挂载：
@@ -187,6 +201,10 @@ app.static("/assets", "./public");
 app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
+
+根目录相对于当前工作目录（CWD）。`app.engine()` 必须在所有使用模板的路由之前调用，否则模板不会渲染。
+
+路由处理器返回的对象会与全局变量合并后传入模板，对象的每个属性按名称成为模板变量。
 
 | 语法 | 说明 | 示例 |
 |---|---|---|
@@ -252,21 +270,32 @@ app.error(async (e, c) => {
 ```typescript
 // server.ts
 import { Bunny, HttpError, type Context } from "@focal/bunny";
-import routes from "./src/routes";
-import logger from "./src/middlewars";
-import auth from "./src/auth";
-import apis from "./src/apis";
 
 const app = new Bunny();
 app.static("/assets", "./assets");
 app.engine("./templates", { appName: "Bunny", year: 2026 });
 
-app.use(logger);
-app.use("/protected/*", auth);
+// 日志中间件
+app.use(async (c: Context, next: () => Promise<void>) => {
+    const start = Date.now();
+    await next();
+    console.log(`${c.req.method} ${c.req.url} — ${Date.now() - start}ms`);
+});
 
-app.route("/", routes);
-app.route("/v1", apis);
+// 鉴权守卫 — 不调用 next() 直接抛出异常
+app.use("/admin/*", async (c: Context, next: () => Promise<void>) => {
+    if (!c.session.get("user")) throw new HttpError(401);
+    await next();
+});
 
+app.get("/", async (c) => "Hello World!");
+
+// 子路由
+const api = new Bunny();
+api.get("/users", async (c) => [{ id: 1, name: "Alice" }]);
+app.route("/v1", api);
+
+// 错误处理
 app.error("error.html", async (e, c) => {
     const status = e instanceof HttpError ? e.status : 500;
     return { status, message: e.message || "Internal Server Error" };
@@ -293,7 +322,7 @@ export default app;
 ### Context
 
 | 方法 / 属性 | 说明 |
-|---|---|---|
+|---|---|
 | `c.req` | 原始 Request |
 | `c.params` | 路径参数 |
 | `c.query` | 查询字符串参数 |

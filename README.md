@@ -27,6 +27,18 @@ Run:
 bun run server.ts
 ```
 
+Bun detects the exported `fetch` handler on the Bunny instance and calls `Bun.serve()` automatically. No explicit server startup is needed.
+
+To customize server options (port, hostname, TLS, etc.), use `Bun.serve()` directly:
+
+```typescript
+// Option A: Export a config object with port
+export default { fetch: app.fetch, port: 3000 };
+
+// Option B: Call Bun.serve explicitly
+Bun.serve({ fetch: app.fetch, port: 3000, hostname: "0.0.0.0" });
+```
+
 ## Routing
 
 ### HTTP Methods
@@ -61,7 +73,7 @@ app.get("/search", async (c) => {
 
 ### Template Rendering
 
-Pass a template filename as the second argument:
+Pass a template filename as the second argument (requires `app.engine()` — see [Template Engine](#template-engine)):
 
 ```typescript
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
@@ -127,6 +139,8 @@ app.use(logger);
 app.use("/admin/*", auth);
 ```
 
+Not calling `next()` in a middleware stops the chain — the route handler (and subsequent middlewares) will not execute. This is how you implement auth guards, rate limiting, etc.
+
 ## Route Grouping
 
 Create a separate `Bunny` instance and mount it with `route()`:
@@ -187,6 +201,10 @@ Automatic ETag, `304` cache negotiation, `206` Partial Content (Range requests f
 app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
+
+The root path is relative to the current working directory. `app.engine()` must be called before any route that uses a template — the engine is not configured otherwise.
+
+When a template is specified as the second route argument, the object returned by the handler is merged with the global variables and exposed to the template. Each property becomes a template variable by its name.
 
 | Syntax | Meaning | Example |
 |---|---|---|
@@ -252,21 +270,32 @@ Error response behavior: if the original route that caused the error had a templ
 ```typescript
 // server.ts
 import { Bunny, HttpError, type Context } from "@focal/bunny";
-import routes from "./src/routes";
-import logger from "./src/middlewars";
-import auth from "./src/auth";
-import apis from "./src/apis";
 
 const app = new Bunny();
 app.static("/assets", "./assets");
 app.engine("./templates", { appName: "Bunny", year: 2026 });
 
-app.use(logger);
-app.use("/protected/*", auth);
+// Logger middleware
+app.use(async (c: Context, next: () => Promise<void>) => {
+    const start = Date.now();
+    await next();
+    console.log(`${c.req.method} ${c.req.url} — ${Date.now() - start}ms`);
+});
 
-app.route("/", routes);
-app.route("/v1", apis);
+// Auth guard — stops the chain by throwing before next()
+app.use("/admin/*", async (c: Context, next: () => Promise<void>) => {
+    if (!c.session.get("user")) throw new HttpError(401);
+    await next();
+});
 
+app.get("/", async (c) => "Hello World!");
+
+// Sub-router
+const api = new Bunny();
+api.get("/users", async (c) => [{ id: 1, name: "Alice" }]);
+app.route("/v1", api);
+
+// Error handler
 app.error("error.html", async (e, c) => {
     const status = e instanceof HttpError ? e.status : 500;
     return { status, message: e.message || "Internal Server Error" };
