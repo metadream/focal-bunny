@@ -217,7 +217,7 @@ When a template is specified as the second route argument, the object returned b
 | `{{@ file}}` | Include partial | `{{@ header.html}}` |
 | `{{> name}}` | Insert a defined block | `{{> sidebar}}` |
 | `{{< name}}...{{<}}` | Define a reusable block | `{{< sidebar}}...{{<}}` |
-| `{{code}}` | Execute JavaScript statement | `{{var total = price * qty;}}` |
+| `{{code}}` | Execute JavaScript statement (no `var`/`let`/`const` — the engine auto-declares variables) | `{{total = price * qty;}}` |
 
 Example template:
 ```html
@@ -231,7 +231,7 @@ Example template:
   {{~ cart: item : i}}
     <p>{{=i + 1}}. {{=item.name}} — ${{=item.price}}</p>
   {{~}}
-  {{var total = cart.reduce((s, i) => s + i.price, 0);}}
+  {{total = cart.reduce((s, i) => s + i.price, 0);}}
   <strong>Total: ${{=total}}</strong>
 {{?? user.role === "guest"}}
   <a href="/login">Login</a>

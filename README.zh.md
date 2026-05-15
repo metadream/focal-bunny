@@ -217,7 +217,7 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 | `{{@ file}}` | 引入子模板 | `{{@ header.html}}` |
 | `{{> name}}` | 插入已定义的块 | `{{> sidebar}}` |
 | `{{< name}}...{{<}}` | 定义可复用的块 | `{{< sidebar}}...{{<}}` |
-| `{{code}}` | 执行 JavaScript 语句 | `{{var total = price * qty;}}` |
+| `{{code}}` | 执行 JavaScript 语句（不能加 `var`/`let`/`const`，引擎会自动声明变量） | `{{total = price * qty;}}` |
 
 模板示例：
 ```html
@@ -231,7 +231,7 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
   {{~ cart: item : i}}
     <p>{{=i + 1}}. {{=item.name}} — ¥{{=item.price}}</p>
   {{~}}
-  {{var total = cart.reduce((s, i) => s + i.price, 0);}}
+  {{total = cart.reduce((s, i) => s + i.price, 0);}}
   <strong>总计: ¥{{=total}}</strong>
 {{?? user.role === "guest"}}
   <a href="/login">登录</a>
