@@ -189,14 +189,36 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
 | 语法 | 说明 |
-|---|---|
-| `{{=expr}}` | 输出表达式 |
-| `{{? expr}}` | if |
-| `{{?? expr}}` | else if |
+|---|---|---|
+| `{{=expr}}` | 输出表达式 — `{{=user.name}}` |
+| `{{? expr}}` | if — `{{? user.loggedIn}}` |
+| `{{?? expr}}` | else if — `{{?? user.role === "admin"}}` |
 | `{{?}}` | end if |
-| `{{~ arr: val}}` | for 循环 |
-| `{{~ arr: val : idx}}` | for 循环（带索引） |
-| `{{@ file}}` | 引入子模板 |
+| `{{~ arr: val}}` | for 循环 — `{{~ items: item}}` |
+| `{{~ arr: val : idx}}` | for 循环（带索引） — `{{~ items: item : i}}` |
+| `{{@ file}}` | 引入子模板 — `{{@ header.html}}` |
+| `{{> name}}` | 插入已定义的块 — `{{> sidebar}}` |
+| `{{< name}}...{{<}}` | 定义可复用的块 — `{{< sidebar}}...{{<}}` |
+| `{{code}}` | 执行 JavaScript 语句 — `{{var total = price * qty;}}` |
+
+模板示例：
+```html
+{{< sidebar}}
+  <nav><a href="/">首页</a></nav>
+{{<}}
+
+{{? user.loggedIn}}
+  {{> sidebar}}
+  <h1>欢迎 {{=user.name}}</h1>
+  {{~ cart: item : i}}
+    <p>{{=i + 1}}. {{=item.name}} — ¥{{=item.price}}</p>
+  {{~}}
+  {{var total = cart.reduce((s, i) => s + i.price, 0);}}
+  <strong>总计: ¥{{=total}}</strong>
+{{?? user.role === "guest"}}
+  <a href="/login">登录</a>
+{{?}}
+```
 
 ## 错误处理
 

@@ -189,14 +189,36 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
 | Syntax | Meaning |
-|---|---|
-| `{{=expr}}` | Output expression |
-| `{{? expr}}` | if |
-| `{{?? expr}}` | else if |
+|---|---|---|
+| `{{=expr}}` | Output expression — `{{=user.name}}` |
+| `{{? expr}}` | if — `{{? user.loggedIn}}` |
+| `{{?? expr}}` | else if — `{{?? user.role === "admin"}}` |
 | `{{?}}` | end if |
-| `{{~ arr: val}}` | for loop |
-| `{{~ arr: val : idx}}` | for loop with index |
-| `{{@ file}}` | Include partial |
+| `{{~ arr: val}}` | for loop — `{{~ items: item}}` |
+| `{{~ arr: val : idx}}` | for loop with index — `{{~ items: item : i}}` |
+| `{{@ file}}` | Include partial — `{{@ header.html}}` |
+| `{{> name}}` | Insert a defined block — `{{> sidebar}}` |
+| `{{< name}}...{{<}}` | Define a reusable block — `{{< sidebar}}...{{<}}` |
+| `{{code}}` | Execute JavaScript statement — `{{var total = price * qty;}}` |
+
+Example template:
+```html
+{{< sidebar}}
+  <nav><a href="/">Home</a></nav>
+{{<}}
+
+{{? user.loggedIn}}
+  {{> sidebar}}
+  <h1>Welcome {{=user.name}}</h1>
+  {{~ cart: item : i}}
+    <p>{{=i + 1}}. {{=item.name}} — ${{=item.price}}</p>
+  {{~}}
+  {{var total = cart.reduce((s, i) => s + i.price, 0);}}
+  <strong>Total: ${{=total}}</strong>
+{{?? user.role === "guest"}}
+  <a href="/login">Login</a>
+{{?}}
+```
 
 ## Error Handling
 
