@@ -221,21 +221,33 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 模板示例：
 ```html
-{{< sidebar}}
-  <nav><a href="/">首页</a></nav>
-{{<}}
+// 定义总布局: layout.html
+<html>
+  <head><title></title></head>
+  <body>
+    {{@ header.html}}
+    <main>{{> content}}</main>
+    {{@ footer.html}}
+  </body>
+</html>
 
-{{? user.loggedIn}}
-  {{> sidebar}}
-  <h1>欢迎 {{=user.name}}</h1>
-  {{~ cart: item : i}}
-    <p>{{=i + 1}}. {{=item.name}} — ¥{{=item.price}}</p>
-  {{~}}
-  {{total = cart.reduce((s, i) => s + i.price, 0);}}
-  <strong>总计: ¥{{=total}}</strong>
-{{?? user.role === "guest"}}
-  <a href="/login">登录</a>
-{{?}}
+// 定义具体页面: index.html
+{{@ layout.html }}
+
+// 嵌入布局中的内容插槽
+{{< content }}
+  {{? user.loggedIn}}
+    {{> sidebar}}
+    <h1>欢迎 {{=user.name}}</h1>
+    {{~ cart: item : i}}
+      <p>{{=i + 1}}. {{=item.name}} — ¥{{=item.price}}</p>
+    {{~}}
+    {{total = cart.reduce((s, i) => s + i.price, 0);}}
+    <strong>总计: ¥{{=total}}</strong>
+  {{?? user.role === "guest"}}
+    <a href="/login">登录</a>
+  {{?}}
+{{< }}
 ```
 
 ## 错误处理
