@@ -188,18 +188,18 @@ app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-| Syntax | Meaning |
+| Syntax | Meaning | Example |
 |---|---|---|
-| `{{=expr}}` | Output expression — `{{=user.name}}` |
-| `{{? expr}}` | if — `{{? user.loggedIn}}` |
-| `{{?? expr}}` | else if — `{{?? user.role === "admin"}}` |
-| `{{?}}` | end if |
-| `{{~ arr: val}}` | for loop — `{{~ items: item}}` |
-| `{{~ arr: val : idx}}` | for loop with index — `{{~ items: item : i}}` |
-| `{{@ file}}` | Include partial — `{{@ header.html}}` |
-| `{{> name}}` | Insert a defined block — `{{> sidebar}}` |
-| `{{< name}}...{{<}}` | Define a reusable block — `{{< sidebar}}...{{<}}` |
-| `{{code}}` | Execute JavaScript statement — `{{var total = price * qty;}}` |
+| `{{=expr}}` | Output expression | `{{=user.name}}` |
+| `{{? expr}}` | if | `{{? user.loggedIn}}` |
+| `{{?? expr}}` | else if | `{{?? user.role === "admin"}}` |
+| `{{?}}` | end if | |
+| `{{~ arr: val}}` | for loop | `{{~ items: item}}` |
+| `{{~ arr: val : idx}}` | for loop with index | `{{~ items: item : i}}` |
+| `{{@ file}}` | Include partial | `{{@ header.html}}` |
+| `{{> name}}` | Insert a defined block | `{{> sidebar}}` |
+| `{{< name}}...{{<}}` | Define a reusable block | `{{< sidebar}}...{{<}}` |
+| `{{code}}` | Execute JavaScript statement | `{{var total = price * qty;}}` |
 
 Example template:
 ```html

@@ -188,18 +188,18 @@ app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-| 语法 | 说明 |
+| 语法 | 说明 | 示例 |
 |---|---|---|
-| `{{=expr}}` | 输出表达式 — `{{=user.name}}` |
-| `{{? expr}}` | if — `{{? user.loggedIn}}` |
-| `{{?? expr}}` | else if — `{{?? user.role === "admin"}}` |
-| `{{?}}` | end if |
-| `{{~ arr: val}}` | for 循环 — `{{~ items: item}}` |
-| `{{~ arr: val : idx}}` | for 循环（带索引） — `{{~ items: item : i}}` |
-| `{{@ file}}` | 引入子模板 — `{{@ header.html}}` |
-| `{{> name}}` | 插入已定义的块 — `{{> sidebar}}` |
-| `{{< name}}...{{<}}` | 定义可复用的块 — `{{< sidebar}}...{{<}}` |
-| `{{code}}` | 执行 JavaScript 语句 — `{{var total = price * qty;}}` |
+| `{{=expr}}` | 输出表达式 | `{{=user.name}}` |
+| `{{? expr}}` | if | `{{? user.loggedIn}}` |
+| `{{?? expr}}` | else if | `{{?? user.role === "admin"}}` |
+| `{{?}}` | end if | |
+| `{{~ arr: val}}` | for 循环 | `{{~ items: item}}` |
+| `{{~ arr: val : idx}}` | for 循环（带索引） | `{{~ items: item : i}}` |
+| `{{@ file}}` | 引入子模板 | `{{@ header.html}}` |
+| `{{> name}}` | 插入已定义的块 | `{{> sidebar}}` |
+| `{{< name}}...{{<}}` | 定义可复用的块 | `{{< sidebar}}...{{<}}` |
+| `{{code}}` | 执行 JavaScript 语句 | `{{var total = price * qty;}}` |
 
 模板示例：
 ```html
