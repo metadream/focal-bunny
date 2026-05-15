@@ -301,13 +301,13 @@ export class Bunny {
 
     /** Register an error handler. Can be called with a template path and handler, or a handler alone. */
     error(arg1: Function | string, arg2?: Function) {
-        const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+        const [handler, tmpl] = resolveArgs(arg1, arg2);
         this.errDef = { template: tmpl, handler };
     }
 
     private routeFor(method: string) {
         return (pattern: string, arg1: Function | string, arg2?: Function) => {
-            const [handler, tmpl] = this.resolveArgs(arg1, arg2);
+            const [handler, tmpl] = resolveArgs(arg1, arg2);
             this.addRoute(method, pattern, handler, tmpl);
         };
     }
@@ -322,13 +322,6 @@ export class Bunny {
             priority: getRoutePriority(pattern),
         });
         this.routes.sort((a, b) => b.priority - a.priority);
-    }
-
-    private resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
-        if (typeof arg1 === "function") {
-            return [arg1, undefined];
-        }
-        return [arg2!, arg1];
     }
 
     private async onError(e: any, ctx: Context): Promise<Response> {
@@ -428,6 +421,13 @@ function parseCookies(req: Request): Record<string, string> {
         if (i > 0) result[c.slice(0, i).trim()] = c.slice(i + 1).trim();
     }
     return result;
+}
+
+function resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
+    if (typeof arg1 === "function") {
+        return [arg1, undefined];
+    }
+    return [arg2!, arg1];
 }
 
 function joinPath(a: string, b: string): string {
