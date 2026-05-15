@@ -219,23 +219,34 @@ When a template is specified as the second route argument, the object returned b
 | `{{< name}}...{{<}}` | Define a reusable block | `{{< sidebar}}...{{<}}` |
 | `{{code}}` | Execute JavaScript statement (no `var`/`let`/`const` — the engine auto-declares variables) | `{{total = price * qty;}}` |
 
-Example template:
-```html
-{{< sidebar}}
-  <nav><a href="/">Home</a></nav>
-{{<}}
+Example template — a layout page with partials and a content block:
 
-{{? user.loggedIn}}
-  {{> sidebar}}
-  <h1>Welcome {{=user.name}}</h1>
-  {{~ cart: item : i}}
-    <p>{{=i + 1}}. {{=item.name}} — ${{=item.price}}</p>
-  {{~}}
-  {{total = cart.reduce((s, i) => s + i.price, 0);}}
-  <strong>Total: ${{=total}}</strong>
-{{?? user.role === "guest"}}
-  <a href="/login">Login</a>
-{{?}}
+```html
+<!-- layout.html — the outer shell -->
+<html>
+  <head><title>{{=title}}</title></head>
+  <body>
+    {{@ header.html}}
+    <main>{{> content}}</main>
+    {{@ footer.html}}
+  </body>
+</html>
+
+<!-- index.html — fills the content block and applies the layout -->
+{{@ layout.html}}
+
+{{< content}}
+  {{? user.loggedIn}}
+    <h1>Welcome {{=user.name}}</h1>
+    {{~ cart: item : i}}
+      <p>{{=i + 1}}. {{=item.name}} — ${{=item.price}}</p>
+    {{~}}
+    {{total = cart.reduce((s, i) => s + i.price, 0);}}
+    <strong>Total: ${{=total}}</strong>
+  {{?? user.role === "guest"}}
+    <a href="/login">Login</a>
+  {{?}}
+{{<}}
 ```
 
 ## Error Handling

@@ -221,9 +221,9 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 
 模板示例：
 ```html
-// 定义总布局: layout.html
+<!-- layout.html — 网站的总布局 -->
 <html>
-  <head><title></title></head>
+  <head><title>{{=title}}</title></head>
   <body>
     {{@ header.html}}
     <main>{{> content}}</main>
@@ -231,10 +231,9 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
   </body>
 </html>
 
-// 定义具体页面: index.html
+<!-- index.html — 网站的具体页面（嵌入布局中的内容插槽） -->
 {{@ layout.html }}
 
-// 嵌入布局中的内容插槽
 {{< content }}
   {{? user.loggedIn}}
     {{> sidebar}}
