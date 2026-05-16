@@ -1,6 +1,6 @@
 {
   "name": "focal-bunny",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "A lightweight Bun web framework with zero dependencies",
   "repository": "https://github.com/metadream/focal-bunny.git",
   "author": "Marco <x@zerg.cc>",
