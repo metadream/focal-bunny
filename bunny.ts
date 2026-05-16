@@ -235,9 +235,13 @@ export class Bunny {
             await compose(0);
             if (route.template && this.stache) {
                 const html = await this.stache.view(route.template, result);
+                const ctype =
+                    ctx.responseHeaders["content-type"] ||
+                    ctx.responseHeaders["Content-Type"] ||
+                    "text/html; charset=utf-8";
                 return new Response(html, {
                     status: ctx.responseStatus,
-                    headers: { ...ctx.responseHeaders, "Content-Type": "text/html; charset=utf-8" },
+                    headers: { ...ctx.responseHeaders, "Content-Type": ctype },
                 });
             }
             return buildResponse(result, ctx);
