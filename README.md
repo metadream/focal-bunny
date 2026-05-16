@@ -221,6 +221,8 @@ When a template is specified as the second route argument, the object returned b
 
 Example template — a layout page with partials and a content block:
 
+> `{{@ file}}` supports both partial includes and parent template inheritance. Include a parent layout with `{{@ layout.html}}`, define blocks with `{{< name}}...{{<}}` inside it, then pass content for those blocks from the child. This enables a reusable **layout pattern**, ideal for pages sharing a common structure.
+
 ```html
 <!-- layout.html — the outer shell -->
 <html>

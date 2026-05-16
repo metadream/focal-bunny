@@ -220,6 +220,8 @@ app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 | `{{code}}` | 执行 JavaScript 语句（不能加 `var`/`let`/`const`，引擎会自动声明变量） | `{{total = price * qty;}}` |
 
 模板示例：
+
+> `{{@ file}}` 不仅支持引入子模板，还支持引入父模板。引入父模板后，通过 `{{< name}}...{{<}}` 定义块，在父模板中用 `{{> name}}` 插入已定义的块，从而实现 **layout 模式**。这在多个具有相同结构的页面场景下尤为推荐。
 ```html
 <!-- layout.html — 网站的总布局 -->
 <html>
