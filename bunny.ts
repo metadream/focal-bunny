@@ -162,6 +162,13 @@ export class Context {
         });
     }
 
+    /** Redirect to a URL (default 307, pass 301/308 for permanent). */
+    redirect(url: string, code: 301 | 302 | 307 | 308 = 307): Response {
+        this.status(code);
+        this.header("Location", url);
+        return new Response(null, { status: code, headers: { ...this.resHeaders } });
+    }
+
     /** The response status code (read-only, set via `.status()`). */
     get responseStatus(): number {
         return this.resStatus;

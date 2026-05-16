@@ -105,6 +105,9 @@ Or use the `Context` API for full control:
 c.text("ok");                       // Plain text
 c.html("<h1>Title</h1>");           // HTML
 c.json({ key: "value" });           // JSON
+c.redirect("/login");               // 307 redirect
+c.redirect("/new-url", 301);        // Permanent redirect
+c.redirect("/new-url", 308);        // Permanent + preserve method
 c.status(201);                      // Set status code
 c.header("X-Version", "1.0");       // Set response header
 ```
@@ -343,5 +346,6 @@ export default app;
 | `c.text(str)` | Plain text response |
 | `c.json(obj)` | JSON response |
 | `c.html(str)` | HTML response |
+| `c.redirect(url, code?)` | Redirect (default 307, also 301/302/308) |
 | `c.status(code)` | Set status code (chainable) |
 | `c.header(name, value)` | Set response header (chainable) |

@@ -105,6 +105,9 @@ app.get("/video", async (c) => {
 c.text("ok");                       // 纯文本
 c.html("<h1>Title</h1>");           // HTML
 c.json({ key: "value" });           // JSON
+c.redirect("/login");               // 307 重定向
+c.redirect("/new-url", 301);        // 永久重定向
+c.redirect("/new-url", 308);        // 永久 + 保留请求方法
 c.status(201);                      // 设置状态码
 c.header("X-Version", "1.0");       // 设置响应头
 ```
@@ -343,5 +346,6 @@ export default app;
 | `c.text(str)` | 纯文本响应 |
 | `c.json(obj)` | JSON 响应 |
 | `c.html(str)` | HTML 响应 |
+| `c.redirect(url, code?)` | 重定向（默认 307，支持 301/302/308） |
 | `c.status(code)` | 设置状态码（链式） |
 | `c.header(name, value)` | 设置响应头（链式） |
