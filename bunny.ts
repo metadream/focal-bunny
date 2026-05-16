@@ -210,6 +210,7 @@ export class Bunny {
         try {
             const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
             if (!route) {
+                ctx._template = this.errDef?.template;
                 if (this.routes.some((r) => r.urlp.test(url))) {
                     throw new HttpError(405);
                 }
