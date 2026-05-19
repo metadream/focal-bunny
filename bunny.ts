@@ -1,6 +1,22 @@
 import { resolve } from "path";
 import { Stache } from "./stache";
 
+type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
+const SESSION_COOKIE = "SESS_ID";
+
+const STATUS_TEXT: Record<number, string> = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    408: "Request Timeout",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Timeout",
+};
+
 interface CookieInit {
     name?: string;
     value?: string;
@@ -19,22 +35,6 @@ interface CookieStoreDeleteOptions {
     domain?: string | null;
     path?: string;
 }
-
-type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
-const SESSION_COOKIE = "SESS_ID";
-
-const STATUS_TEXT: Record<number, string> = {
-    400: "Bad Request",
-    401: "Unauthorized",
-    403: "Forbidden",
-    404: "Not Found",
-    405: "Method Not Allowed",
-    408: "Request Timeout",
-    500: "Internal Server Error",
-    502: "Bad Gateway",
-    503: "Service Unavailable",
-    504: "Gateway Timeout",
-};
 
 interface RouteDef {
     method: string;
