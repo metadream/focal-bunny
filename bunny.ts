@@ -95,9 +95,11 @@ export class CookieJar {
         if (arg1 instanceof Cookie) {
             cookie = arg1;
         } else if (typeof arg1 === "string") {
-            cookie = new Cookie(arg1, arg2 as string, arg3);
+            const opts = arg3 ?? { httpOnly: true };
+            cookie = new Cookie(arg1, arg2 as string, opts);
         } else {
-            cookie = new Cookie(arg1);
+            const opts = arg1.httpOnly === undefined ? { ...arg1, httpOnly: true } : arg1;
+            cookie = new Cookie(opts);
         }
         this.map.set(cookie.name, cookie.value);
         this.ctx.header("Set-Cookie", cookie.serialize());

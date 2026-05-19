@@ -189,6 +189,43 @@ app.get("/logout", async (c) => {
 
 Session ID is stored in a `SESS_ID` cookie (`HttpOnly`, `SameSite=Lax`). Data is held in memory by the default `SessionStore` — restarting the server clears all sessions.
 
+## Cookies
+
+Read and write cookies via `c.cookies` — a `CookieJar` that works like Bun's `routes` API `CookieMap`. Changes are automatically applied to the response as `Set-Cookie` headers.
+
+```typescript
+app.get("/cookies", async (c) => {
+    // Read
+    const token = c.cookies.get("token");
+
+    // Check
+    if (c.cookies.has("theme")) { /* ... */ }
+
+    // Write (httpOnly defaults to true)
+    c.cookies.set("session", "abc123");
+    c.cookies.set("token", "xyz", { httpOnly: false });
+    c.cookies.set({ name: "theme", value: "dark", path: "/" });
+    c.cookies.set(new Bun.Cookie("visit", "1", { maxAge: 3600 }));
+
+    // Delete
+    c.cookies.delete("token");
+    c.cookies.delete({ name: "old", path: "/admin" });
+
+    return "OK";
+});
+```
+
+| Method | Description |
+|---|---|
+| `get(name)` | Get cookie value (`string \| null`) |
+| `has(name)` | Check if cookie exists |
+| `set(name, value, options?)` | Set cookie (options: `httpOnly`, `secure`, `sameSite`, `maxAge`, `path`, etc.) |
+| `set(options)` | Set cookie via `CookieInit` object |
+| `set(cookie)` | Set cookie via `Bun.Cookie` instance |
+| `delete(name)` | Delete cookie |
+| `delete(options)` | Delete cookie with specific domain/path |
+| `size` | Number of cookies |
+
 ## Static Assets
 
 ```typescript
@@ -340,6 +377,7 @@ export default app;
 | Method / Property | Description |
 |---|---|
 | `c.req` | Raw Request object |
+| `c.cookies` | Cookie get/has/set/delete (see [Cookies](#cookies)) |
 | `c.params` | Path parameters |
 | `c.query` | Query string parameters |
 | `c.session` | Session get/set (`.get<T>(key)`, `.set(key, value)`) |

@@ -189,6 +189,43 @@ app.get("/logout", async (c) => {
 
 Session ID 通过 `SESS_ID` cookie（`HttpOnly`、`SameSite=Lax`）传递。数据存储在默认的 `SessionStore` 内存中，重启服务后所有会话将丢失。
 
+## Cookies
+
+通过 `c.cookies` 读写 cookie——`CookieJar` 的用法与 Bun `routes` API 的 `CookieMap` 一致。所有修改会自动写入响应 `Set-Cookie` 头。
+
+```typescript
+app.get("/cookies", async (c) => {
+    // 读取
+    const token = c.cookies.get("token");
+
+    // 判断
+    if (c.cookies.has("theme")) { /* ... */ }
+
+    // 写入（httpOnly 默认 true）
+    c.cookies.set("session", "abc123");
+    c.cookies.set("token", "xyz", { httpOnly: false });
+    c.cookies.set({ name: "theme", value: "dark", path: "/" });
+    c.cookies.set(new Bun.Cookie("visit", "1", { maxAge: 3600 }));
+
+    // 删除
+    c.cookies.delete("token");
+    c.cookies.delete({ name: "old", path: "/admin" });
+
+    return "OK";
+});
+```
+
+| 方法 | 说明 |
+|---|---|
+| `get(name)` | 获取 cookie 值（`string \| null`） |
+| `has(name)` | 判断 cookie 是否存在 |
+| `set(name, value, options?)` | 设置 cookie（options: `httpOnly`, `secure`, `sameSite`, `maxAge`, `path` 等） |
+| `set(options)` | 通过 `CookieInit` 对象设置 |
+| `set(cookie)` | 通过 `Bun.Cookie` 实例设置 |
+| `delete(name)` | 删除 cookie |
+| `delete(options)` | 按域名/路径删除 cookie |
+| `size` | cookie 数量 |
+
 ## 静态资源
 
 ```typescript
@@ -340,6 +377,7 @@ export default app;
 | 方法 / 属性 | 说明 |
 |---|---|
 | `c.req` | 原始 Request |
+| `c.cookies` | Cookie 读写（详见 [Cookies](#cookies)） |
 | `c.params` | 路径参数 |
 | `c.query` | 查询字符串参数 |
 | `c.session` | 会话读写（`.get<T>(key)`, `.set(key, value)`） |
