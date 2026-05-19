@@ -90,12 +90,12 @@ export class CookieJar {
     set(name: string, value: string, options?: CookieInit): void;
     set(options: CookieInit): void;
     set(cookie: Cookie): void;
-    set(arg1: any, arg2?: any, arg3?: any): void {
+    set(arg1: string | CookieInit | Cookie, arg2?: string | CookieInit, arg3?: CookieInit): void {
         let cookie: Cookie;
         if (arg1 instanceof Cookie) {
             cookie = arg1;
         } else if (typeof arg1 === "string") {
-            cookie = new Cookie(arg1, arg2, arg3);
+            cookie = new Cookie(arg1, arg2 as string, arg3);
         } else {
             cookie = new Cookie(arg1);
         }
@@ -105,7 +105,7 @@ export class CookieJar {
 
     delete(name: string): void;
     delete(options: CookieStoreDeleteOptions): void;
-    delete(arg: any): void {
+    delete(arg: string | CookieStoreDeleteOptions): void {
         let name: string;
         let domain: string | null | undefined;
         let path: string | undefined;
