@@ -1,4 +1,5 @@
 import { resolve } from "path";
+import { Cookie, CookieMap, type CookieInit, type CookieStoreDeleteOptions } from "bun";
 import { Stache } from "./stache";
 
 type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
@@ -67,6 +68,72 @@ export class SessionStore {
 }
 
 const sessionStore = new SessionStore();
+
+/** Cookie jar that mirrors Bun's `CookieMap` behavior and auto-applies changes to response headers. */
+export class CookieJar {
+    private map: CookieMap;
+    private ctx: Context;
+
+    constructor(ctx: Context) {
+        this.ctx = ctx;
+        this.map = new CookieMap(ctx.req.headers.get("Cookie") || "");
+    }
+
+    get(name: string): string | null {
+        return this.map.get(name);
+    }
+
+    has(name: string): boolean {
+        return this.map.has(name);
+    }
+
+    set(name: string, value: string, options?: CookieInit): void;
+    set(options: CookieInit): void;
+    set(cookie: Cookie): void;
+    set(arg1: any, arg2?: any, arg3?: any): void {
+        let cookie: Cookie;
+        if (arg1 instanceof Cookie) {
+            cookie = arg1;
+        } else if (typeof arg1 === "string") {
+            cookie = new Cookie(arg1, arg2, arg3);
+        } else {
+            cookie = new Cookie(arg1);
+        }
+        this.map.set(cookie.name, cookie.value);
+        this.ctx.header("Set-Cookie", cookie.serialize());
+    }
+
+    delete(name: string): void;
+    delete(options: CookieStoreDeleteOptions): void;
+    delete(arg: any): void {
+        let name: string;
+        let domain: string | null | undefined;
+        let path: string | undefined;
+        if (typeof arg === "string") {
+            name = arg;
+            this.map.delete(name);
+            path = "/";
+        } else {
+            name = arg.name;
+            domain = arg.domain;
+            path = arg.path;
+            this.map.delete(arg);
+        }
+        let h = `${name}=; Max-Age=0`;
+        if (path) h += `; Path=${path}`;
+        if (domain) h += `; Domain=${domain}`;
+        this.ctx.header("Set-Cookie", h);
+    }
+
+    get size(): number {
+        return this.map.size;
+    }
+
+    [Symbol.iterator](): IterableIterator<[string, string]> {
+        return this.map[Symbol.iterator]();
+    }
+}
+
 /** Per-request context passed to route handlers and middleware. */
 export class Context {
     /** Raw incoming `Request` object. */
@@ -79,12 +146,21 @@ export class Context {
     private resHeaders: Record<string, string> = {};
     private _sessionData?: Record<string, unknown>;
     private _sessionSid?: string;
+    private _cookieJar?: CookieJar;
     [key: string]: unknown;
 
     constructor(req: Request, params: Record<string, string>) {
         this.req = req;
         this.params = params;
         this.query = Object.fromEntries(new URL(req.url).searchParams);
+    }
+
+    /** Cookies map. Lazily initialized. Supports get/has/set/delete like Bun's `routes` API. */
+    get cookies(): CookieJar {
+        if (!this._cookieJar) {
+            this._cookieJar = new CookieJar(this);
+        }
+        return this._cookieJar;
     }
 
     /** Read and write session data. Initializes the session lazily on first access. */
@@ -96,14 +172,17 @@ export class Context {
     } {
         const self = this;
         if (!self._sessionData) {
-            const cookies = parseCookies(self.req);
-            self._sessionSid = cookies[SESSION_COOKIE];
+            self._sessionSid = self.cookies.get(SESSION_COOKIE) ?? undefined;
             if (self._sessionSid) {
                 self._sessionData = sessionStore.get(self._sessionSid) || {};
             } else {
                 self._sessionSid = crypto.randomUUID();
                 self._sessionData = {};
-                self.header("Set-Cookie", `${SESSION_COOKIE}=${self._sessionSid}; Path=/; HttpOnly; SameSite=Lax`);
+                self.cookies.set(SESSION_COOKIE, self._sessionSid, {
+                    path: "/",
+                    httpOnly: true,
+                    sameSite: "lax",
+                });
             }
         }
         return {
@@ -121,7 +200,7 @@ export class Context {
             destroy(): void {
                 self._sessionData = {};
                 sessionStore.set(self._sessionSid!, {});
-                self.header("Set-Cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+                self.cookies.delete(SESSION_COOKIE);
             },
         };
     }
@@ -422,16 +501,6 @@ function buildResponse(val: any, ctx?: Context, overrideStatus?: number): Respon
         });
     }
     return new Response(String(val), { status, headers });
-}
-
-function parseCookies(req: Request): Record<string, string> {
-    const cookie = req.headers.get("Cookie") || "";
-    const result: Record<string, string> = {};
-    for (const c of cookie.split(";")) {
-        const i = c.indexOf("=");
-        if (i > 0) result[c.slice(0, i).trim()] = c.slice(i + 1).trim();
-    }
-    return result;
 }
 
 function resolveArgs(arg1: Function | string, arg2?: Function): [Function, string?] {
