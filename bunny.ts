@@ -1,6 +1,24 @@
 import { resolve } from "path";
-import type { CookieInit, CookieStoreDeleteOptions } from "bun";
 import { Stache } from "./stache";
+
+interface CookieInit {
+    name?: string;
+    value?: string;
+    domain?: string;
+    path?: string;
+    expires?: number | Date | string;
+    secure?: boolean;
+    sameSite?: "strict" | "lax" | "none";
+    httpOnly?: boolean;
+    partitioned?: boolean;
+    maxAge?: number;
+}
+
+interface CookieStoreDeleteOptions {
+    name: string;
+    domain?: string | null;
+    path?: string;
+}
 
 type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 const SESSION_COOKIE = "SESS_ID";
