@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { Cookie, CookieMap, type CookieInit, type CookieStoreDeleteOptions } from "bun";
+import type { CookieInit, CookieStoreDeleteOptions } from "bun";
 import { Stache } from "./stache";
 
 type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
@@ -71,12 +71,12 @@ const sessionStore = new SessionStore();
 
 /** Cookie jar that mirrors Bun's `CookieMap` behavior and auto-applies changes to response headers. */
 export class CookieJar {
-    private map: CookieMap;
+    private map: Bun.CookieMap;
     private ctx: Context;
 
     constructor(ctx: Context) {
         this.ctx = ctx;
-        this.map = new CookieMap(ctx.req.headers.get("Cookie") || "");
+        this.map = new Bun.CookieMap(ctx.req.headers.get("Cookie") || "");
     }
 
     get(name: string): string | null {
@@ -89,17 +89,17 @@ export class CookieJar {
 
     set(name: string, value: string, options?: CookieInit): void;
     set(options: CookieInit): void;
-    set(cookie: Cookie): void;
-    set(arg1: string | CookieInit | Cookie, arg2?: string | CookieInit, arg3?: CookieInit): void {
-        let cookie: Cookie;
-        if (arg1 instanceof Cookie) {
+    set(cookie: Bun.Cookie): void;
+    set(arg1: string | CookieInit | Bun.Cookie, arg2?: string | CookieInit, arg3?: CookieInit): void {
+        let cookie: Bun.Cookie;
+        if (arg1 instanceof Bun.Cookie) {
             cookie = arg1;
         } else if (typeof arg1 === "string") {
             const opts = arg3 ?? { httpOnly: true };
-            cookie = new Cookie(arg1, arg2 as string, opts);
+            cookie = new Bun.Cookie(arg1, arg2 as string, opts);
         } else {
             const opts = arg1.httpOnly === undefined ? { ...arg1, httpOnly: true } : arg1;
-            cookie = new Cookie(opts);
+            cookie = new Bun.Cookie(opts);
         }
         this.map.set(cookie.name, cookie.value);
         this.ctx.header("Set-Cookie", cookie.serialize());
