@@ -145,7 +145,7 @@ export class Context {
     /** Parsed query-string parameters from the URL. */
     query: Record<string, string>;
     private resStatus = 200;
-    private resHeaders: Record<string, string> = {};
+    private resHeaders = new Headers();
     private _sessionData?: Record<string, unknown>;
     private _sessionSid?: string;
     private _cookieJar?: CookieJar;
@@ -215,39 +215,43 @@ export class Context {
 
     /** Set a response header. Chainable. */
     header(name: string, value: string): this {
-        this.resHeaders[name] = value;
+        if (name.toLowerCase() === "set-cookie") {
+            this.resHeaders.append(name, value);
+        } else {
+            this.resHeaders.set(name, value);
+        }
         return this;
+    }
+
+    /** All response header entries, including multiple `Set-Cookie` values. */
+    get headerEntries(): [string, string][] {
+        return [...this.resHeaders.entries()];
     }
 
     /** Return a JSON response. Automatically sets `Content-Type: application/json`. */
     json(obj: any): Response {
-        return new Response(JSON.stringify(obj), {
-            status: this.resStatus,
-            headers: { ...this.resHeaders, "Content-Type": "application/json" },
-        });
+        const h = new Headers(this.resHeaders);
+        h.set("Content-Type", "application/json");
+        return new Response(JSON.stringify(obj), { status: this.resStatus, headers: h });
     }
 
     /** Return an HTML response. Automatically sets `Content-Type: text/html; charset=utf-8`. */
     html(str: string): Response {
-        return new Response(str, {
-            status: this.resStatus,
-            headers: { ...this.resHeaders, "Content-Type": "text/html; charset=utf-8" },
-        });
+        const h = new Headers(this.resHeaders);
+        h.set("Content-Type", "text/html; charset=utf-8");
+        return new Response(str, { status: this.resStatus, headers: h });
     }
 
     /** Return a plain-text response. */
     text(str: string): Response {
-        return new Response(str, {
-            status: this.resStatus,
-            headers: this.resHeaders,
-        });
+        return new Response(str, { status: this.resStatus, headers: this.resHeaders });
     }
 
     /** Redirect to a URL (default 307, pass 301/308 for permanent). */
     redirect(url: string, code: 301 | 302 | 307 | 308 = 307): Response {
         this.status(code);
         this.header("Location", url);
-        return new Response(null, { status: code, headers: { ...this.resHeaders } });
+        return new Response(null, { status: code, headers: new Headers(this.resHeaders) });
     }
 
     /** The response status code (read-only, set via `.status()`). */
@@ -256,7 +260,7 @@ export class Context {
     }
     /** The response headers (read-only, set via `.header()`). */
     get responseHeaders(): Record<string, string> {
-        return this.resHeaders;
+        return Object.fromEntries(this.resHeaders.entries());
     }
 }
 
@@ -321,7 +325,7 @@ export class Bunny {
                 }
                 return new Response(html, {
                     status: ctx.responseStatus,
-                    headers: { ...ctx.responseHeaders },
+                    headers: ctx.headerEntries,
                 });
             }
             return buildResponse(result, ctx);
@@ -426,10 +430,9 @@ export class Bunny {
 
         if (ctx._template && this.errDef.template && this.stache) {
             const html = await this.stache.view(this.errDef.template, result);
-            return new Response(html, {
-                status,
-                headers: { ...ctx.responseHeaders, "Content-Type": "text/html; charset=utf-8" },
-            });
+            const h = new Headers(ctx.headerEntries);
+            h.set("Content-Type", "text/html; charset=utf-8");
+            return new Response(html, { status, headers: h });
         }
         return buildResponse(result, ctx, status);
     }
@@ -479,28 +482,21 @@ function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
 function buildResponse(val: any, ctx?: Context, overrideStatus?: number): Response {
     if (val instanceof Response) return val;
     const status = overrideStatus ?? ctx?.responseStatus ?? 200;
-    const headers = { ...ctx?.responseHeaders };
+    const headers = new Headers(ctx?.headerEntries);
 
-    if (val == null) {
-        return new Response(null, { status: 204, headers });
-    }
-    if (val instanceof ReadableStream) {
+    if (val == null) return new Response(null, { status: 204, headers });
+    if (val instanceof ReadableStream) return new Response(val, { status, headers });
+    if (val instanceof Blob) {
+        headers.set("Content-Type", val.type || "application/octet-stream");
         return new Response(val, { status, headers });
     }
-    if (val instanceof Blob) {
-        return new Response(val, {
-            status,
-            headers: { ...headers, "Content-Type": val.type || "application/octet-stream" },
-        });
-    }
     if (typeof val === "string") {
-        return new Response(val, { status, headers: { ...headers, "Content-Type": "text/html; charset=utf-8" } });
+        headers.set("Content-Type", "text/html; charset=utf-8");
+        return new Response(val, { status, headers });
     }
     if (typeof val === "object") {
-        return new Response(JSON.stringify(val), {
-            status,
-            headers: { ...headers, "Content-Type": "application/json" },
-        });
+        headers.set("Content-Type", "application/json");
+        return new Response(JSON.stringify(val), { status, headers });
     }
     return new Response(String(val), { status, headers });
 }
