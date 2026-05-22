@@ -378,6 +378,7 @@ export default app;
 |---|---|
 | `c.req` | 原始 Request |
 | `c.cookies` | Cookie 读写（详见 [Cookies](#cookies)） |
+| `c.ip` | 远程客户端 IP（自动通过 `server.requestIP()` 及代理头识别） |
 | `c.params` | 路径参数 |
 | `c.query` | 查询字符串参数 |
 | `c.session` | 会话读写（`.get<T>(key)`, `.set(key, value)`） |

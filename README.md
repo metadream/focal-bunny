@@ -378,6 +378,7 @@ export default app;
 |---|---|
 | `c.req` | Raw Request object |
 | `c.cookies` | Cookie get/has/set/delete (see [Cookies](#cookies)) |
+| `c.ip` | Remote client IP (auto-detected via `server.requestIP()` & proxy headers) |
 | `c.params` | Path parameters |
 | `c.query` | Query string parameters |
 | `c.session` | Session get/set (`.get<T>(key)`, `.set(key, value)`) |
