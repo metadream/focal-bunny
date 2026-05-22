@@ -249,8 +249,10 @@ export class Context {
 
     /** Remote client IP address. Prefers `server.requestIP()` (direct connection), then falls back to common proxy headers. */
     get ip(): string | null {
-        const direct = this._server?.requestIP(this.req)?.address;
-        if (direct) return direct;
+        try {
+            const direct = this._server?.requestIP?.(this.req)?.address;
+            if (direct) return direct;
+        } catch {}
         const headers = this.req.headers;
         return headers.get("cf-connecting-ip")
             ?? headers.get("x-real-ip")
