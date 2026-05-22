@@ -167,6 +167,7 @@ export class Context {
     private _sessionData?: Record<string, unknown>;
     private _sessionSid?: string;
     private _cookieJar?: CookieJar;
+    private _server?: Bun.Server;
     [key: string]: unknown;
 
     constructor(req: Request, params: Record<string, string>) {
@@ -246,6 +247,17 @@ export class Context {
         return [...this.resHeaders.entries()];
     }
 
+    /** Remote client IP address. Prefers `server.requestIP()` (direct connection), then falls back to common proxy headers. */
+    get ip(): string | null {
+        const direct = this._server?.requestIP(this.req)?.address;
+        if (direct) return direct;
+        const headers = this.req.headers;
+        return headers.get("cf-connecting-ip")
+            ?? headers.get("x-real-ip")
+            ?? headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+            ?? null;
+    }
+
     /** Return a JSON response. Automatically sets `Content-Type: application/json`. */
     json(obj: any): Response {
         const h = new Headers(this.resHeaders);
@@ -305,10 +317,11 @@ export class Bunny {
     head: RouteMethod = this.routeFor("HEAD");
 
     /** Fetch handler. Called automatically by Bun when the app is exported. */
-    fetch = async (req: Request): Promise<Response> => {
+    fetch = async (req: Request, server?: Bun.Server): Promise<Response> => {
         const url = new URL(req.url);
         const params: Record<string, string> = {};
         const ctx = new Context(req, params);
+        ctx._server = server;
 
         try {
             const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
