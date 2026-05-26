@@ -167,11 +167,12 @@ export class Context {
     private _sessionData?: Record<string, unknown>;
     private _sessionSid?: string;
     private _cookieJar?: CookieJar;
-    private _server?: Bun.Server;
+    private _server?: Bun.Server<unknown>;
     [key: string]: unknown;
 
-    constructor(req: Request, params: Record<string, string>) {
+    constructor(req: Request, server?: Bun.Server<unknown>, params: Record<string, string> = {}) {
         this.req = req;
+        this._server = server;
         this.params = params;
         this.query = Object.fromEntries(new URL(req.url).searchParams);
     }
@@ -321,11 +322,10 @@ export class Bunny {
     head: RouteMethod = this.routeFor("HEAD");
 
     /** Fetch handler. Called automatically by Bun when the app is exported. */
-    fetch = async (req: Request, server?: Bun.Server): Promise<Response> => {
+    fetch = async (req: Request, server?: Bun.Server<unknown>): Promise<Response> => {
         const url = new URL(req.url);
         const params: Record<string, string> = {};
-        const ctx = new Context(req, params);
-        ctx._server = server;
+        const ctx = new Context(req, server, params);
 
         try {
             const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
