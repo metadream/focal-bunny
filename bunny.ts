@@ -303,7 +303,7 @@ export class Bunny {
     private routes: RouteDef[] = [];
     private middlewares: MiddlewareDef[] = [];
     private errDef?: ErrorDef;
-    private stache?: Mustache;
+    private stache = new Mustache();
 
     /** Register a GET route. */
     get: RouteMethod = this.routeFor("GET");
@@ -353,7 +353,7 @@ export class Bunny {
             };
 
             await compose(0);
-            if (route.template && this.stache) {
+            if (route.template) {
                 const html = await this.stache.view(route.template, result);
                 if (!ctx.responseHeaders["content-type"] && !ctx.responseHeaders["Content-Type"]) {
                     ctx.header("Content-Type", "text/html; charset=utf-8");
@@ -425,9 +425,10 @@ export class Bunny {
         });
     }
 
-    /** Configure the template engine with a root directory and optional global variables. */
-    engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
-        this.stache = new Mustache(tmplRoot, globalVars);
+    /** Configure the template engine root directory and global variables. Both optional. */
+    engine(tmplRoot?: string, globalVars?: Record<string, unknown>) {
+        if (tmplRoot !== undefined) this.stache.setRoot(tmplRoot);
+        if (globalVars !== undefined) this.stache.setGlobals(globalVars);
     }
 
     /** Register an error handler. Can be called with a template path and handler, or a handler alone. */
@@ -463,7 +464,7 @@ export class Bunny {
         const result = await this.errDef.handler(e, ctx);
         const status = e instanceof HttpError ? e.status : 500;
 
-        if (ctx._template && this.errDef.template && this.stache) {
+        if (ctx._template && this.errDef.template) {
             const html = await this.stache.view(this.errDef.template, result);
             const h = new Headers(ctx.headerEntries);
             h.set("Content-Type", "text/html; charset=utf-8");
