@@ -351,8 +351,9 @@ export class Bunny {
                     result = await route.handler(ctx);
                 }
             };
-
             await compose(0);
+
+            if (result instanceof Response) return result;
             if (route.template) {
                 const html = await this.stache.view(route.template, result);
                 if (!ctx.responseHeaders["content-type"] && !ctx.responseHeaders["Content-Type"]) {
@@ -463,6 +464,7 @@ export class Bunny {
 
         const result = await this.errDef.handler(e, ctx);
         const status = e instanceof HttpError ? e.status : 500;
+        if (result instanceof Response) return result;
 
         if (ctx._template && this.errDef.template) {
             const html = await this.stache.view(this.errDef.template, result);
