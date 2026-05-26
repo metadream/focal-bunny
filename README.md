@@ -73,7 +73,7 @@ app.get("/search", async (c) => {
 
 ### Template Rendering
 
-Pass a template filename as the second argument (requires `app.engine()` — see [Template Engine](#template-engine)):
+Pass a template filename as the second argument (see [Template Engine](#template-engine)):
 
 ```typescript
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
@@ -242,7 +242,11 @@ app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-The root path is relative to the current working directory. `app.engine()` must be called before any route that uses a template — the engine is not configured otherwise.
+The root path defaults to the current working directory. Global variables can be set via `app.engine()` (also accepts a custom root):
+
+```typescript
+app.engine("./views", { appName: "MyApp", year: 2026 });
+```
 
 When a template is specified as the second route argument, the object returned by the handler is merged with the global variables and exposed to the template. Each property becomes a template variable by its name.
 

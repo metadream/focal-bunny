@@ -73,7 +73,7 @@ app.get("/search", async (c) => {
 
 ### 模板渲染
 
-第二个参数传入模板文件名（需要先调用 `app.engine()`，见[模板引擎](#模板引擎)）：
+第二个参数传入模板文件名（见[模板引擎](#模板引擎)）：
 
 ```typescript
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
@@ -242,7 +242,11 @@ app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-根目录相对于当前工作目录（CWD）。`app.engine()` 必须在所有使用模板的路由之前调用，否则模板不会渲染。
+根目录默认为当前工作目录。可通过 `app.engine()` 自定义根目录和全局变量：
+
+```typescript
+app.engine("./views", { appName: "MyApp", year: 2026 });
+```
 
 路由处理器返回的对象会与全局变量合并后传入模板，对象的每个属性按名称成为模板变量。
 
