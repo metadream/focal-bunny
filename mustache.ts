@@ -55,9 +55,20 @@ export class Mustache {
     private cache: Record<string, Renderer> = {};
 
     /** Set template root path and global variables. */
-    constructor(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
+    constructor(tmplRoot: string = "", globalVars: Record<string, unknown> = {}) {
         this.tmplRoot = tmplRoot;
         Object.assign(this.globalVars, globalVars);
+    }
+
+    /** Update template root directory (clears template cache). */
+    setRoot(root: string): void {
+        this.tmplRoot = root;
+        this.cache = {};
+    }
+
+    /** Merge global variables into the engine. */
+    setGlobals(vars: Record<string, unknown>): void {
+        Object.assign(this.globalVars, vars);
     }
 
     /**
