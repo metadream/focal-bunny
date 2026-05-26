@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { Stache } from "./stache";
+import { Mustache } from "./mustache";
 
 type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 const SESSION_COOKIE = "SESS_ID";
@@ -254,10 +254,12 @@ export class Context {
             if (direct) return direct;
         } catch {}
         const headers = this.req.headers;
-        return headers.get("cf-connecting-ip")
-            ?? headers.get("x-real-ip")
-            ?? headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-            ?? null;
+        return (
+            headers.get("cf-connecting-ip") ??
+            headers.get("x-real-ip") ??
+            headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+            null
+        );
     }
 
     /** Return a JSON response. Automatically sets `Content-Type: application/json`. */
@@ -301,7 +303,7 @@ export class Bunny {
     private routes: RouteDef[] = [];
     private middlewares: MiddlewareDef[] = [];
     private errDef?: ErrorDef;
-    private stache?: Stache;
+    private stache?: Mustache;
 
     /** Register a GET route. */
     get: RouteMethod = this.routeFor("GET");
@@ -423,9 +425,9 @@ export class Bunny {
         });
     }
 
-    /** Configure the Stache template engine with a root directory and optional global variables. */
+    /** Configure the template engine with a root directory and optional global variables. */
     engine(tmplRoot: string, globalVars: Record<string, unknown> = {}) {
-        this.stache = new Stache(tmplRoot, globalVars);
+        this.stache = new Mustache(tmplRoot, globalVars);
     }
 
     /** Register an error handler. Can be called with a template path and handler, or a handler alone. */

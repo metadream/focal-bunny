@@ -40,14 +40,13 @@ async function readTextFile(path: string) {
 }
 
 /**
- * Stache - A Tiny Independent Template Engine
+ * Mustache - A Tiny Independent Template Engine
  * Quickly parse template strings and files with specific syntax.
  *
  * @Author Marco
- * @Repository https://github.com/metadream/focal-stache
  * @Since 2022-11-09
  */
-export class Stache {
+export class Mustache {
     // Template engine options
     private tmplRoot = "";
     private globalVars: Record<string, unknown> = {};
