@@ -1,5 +1,6 @@
-import { resolve } from "path";
-import { Mustache } from "./mustache";
+import "./bun-shim.ts";
+import { resolve } from "node:path";
+import { Mustache } from "./mustache.ts";
 
 type RouteMethod = (pattern: string, arg1: Function | string, arg2?: Function) => void;
 const SESSION_COOKIE = "SESS_ID";
@@ -167,10 +168,10 @@ export class Context {
     private _sessionData?: Record<string, unknown>;
     private _sessionSid?: string;
     private _cookieJar?: CookieJar;
-    private _server?: Bun.Server<unknown>;
+    private _server?: any;
     [key: string]: unknown;
 
-    constructor(req: Request, server?: Bun.Server<unknown>, params: Record<string, string> = {}) {
+    constructor(req: Request, server?: any, params: Record<string, string> = {}) {
         this.req = req;
         this._server = server;
         this.params = params;
@@ -322,7 +323,7 @@ export class Bunny {
     head: RouteMethod = this.routeFor("HEAD");
 
     /** Fetch handler. Called automatically by Bun when the app is exported. */
-    fetch = async (req: Request, server?: Bun.Server<unknown>): Promise<Response> => {
+    fetch = async (req: Request, server?: any): Promise<Response> => {
         const url = new URL(req.url);
         const params: Record<string, string> = {};
         const ctx = new Context(req, server, params);
@@ -417,11 +418,11 @@ export class Bunny {
                 if (!(await file.exists())) {
                     if (!filePath) {
                         const idx = Bun.file(resolve(fullPath, "index.html"));
-                        if (await idx.exists()) return serveFile(c.req, idx);
+                        if (await idx.exists()) return await serveFile(c.req, idx);
                     }
                     throw new HttpError(404);
                 }
-                return serveFile(c.req, file);
+                return await serveFile(c.req, file);
             })();
         });
     }
@@ -487,7 +488,7 @@ function getRoutePriority(pattern: string): number {
     return score;
 }
 
-function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
+async function serveFile(req: Request, file: any): Promise<Response> {
     const etag = `W/"${file.size}-${file.lastModified}"`;
     if (req.headers.get("If-None-Match") === etag) {
         return new Response(null, { status: 304 });
@@ -514,7 +515,8 @@ function serveFile(req: Request, file: ReturnType<typeof Bun.file>): Response {
         }
     }
 
-    return new Response(file, { headers });
+    if (file instanceof Blob) return new Response(file, { headers });
+    return new Response(await file.bytes(), { headers });
 }
 
 function buildResponse(val: any, ctx?: Context, overrideStatus?: number): Response {
