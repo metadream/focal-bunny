@@ -1,6 +1,6 @@
 {
   "name": "focal-bunny",
-  "version": "0.1.13",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "A lightweight web framework for Bun & Deno with zero dependencies",
   "repository": "https://github.com/metadream/focal-bunny.git",
