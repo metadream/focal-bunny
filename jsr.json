@@ -1,6 +1,0 @@
-{
-  "name": "@focal/bunny",
-  "version": "0.2.0",
-  "license": "MIT",
-  "exports": "./bunny.ts"
-}
