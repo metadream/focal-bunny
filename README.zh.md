@@ -1,43 +1,60 @@
-# 🐰 Bunny — 轻量 Bun Web 框架
+# 🐰 Bunny — 轻量 Web 框架（Bun & Deno）
 
 中文 | [English](README.md)
 
-基于 [Bun](https://bun.sh) 原生 API 的 Web 框架，无外部依赖，支持路由分组、中间件、模板引擎、静态文件、错误处理。
+基于 [Bun](https://bun.sh) 原生 API 的 Web 框架，无外部依赖，也可运行于 [Deno](https://deno.com)。支持路由分组、中间件、模板引擎、静态文件、错误处理。
 
 ## 安装
 
 ```bash
-# 通过 JSR 安装
+# Bun — 通过 JSR
 bunx jsr add @focal/bunny
+
+# Deno — 通过 JSR
+deno add @focal/bunny
+# 或直接导入:
+# import { Bunny } from "jsr:@focal/bunny"
 ```
 
 ## 快速开始
 
 ```typescript
+// server.ts
 import { Bunny } from "@focal/bunny";
 
 const app = new Bunny();
 app.get("/", async (c) => "Hello World!");
-export default app;
 ```
 
-启动：
+### Bun
 
 ```bash
 bun run server.ts
 ```
 
-Bun 会自动检测到导出对象上的 `fetch` 方法，自动调用 `Bun.serve()`。无需显式启动服务器。
+在文件末尾添加 `export default app;`，Bun 会自动检测 `fetch` 处理器并调用 `Bun.serve()`——无需显式启动。
 
-如需自定义服务器参数（端口、主机名、TLS 等），可直接使用 `Bun.serve()`：
+如需自定义服务器参数：
 
 ```typescript
-// 方式 A：导出配置对象，指定端口
 export default { fetch: app.fetch, port: 3000 };
-
-// 方式 B：显式调用 Bun.serve
+// 或
 Bun.serve({ fetch: app.fetch, port: 3000, hostname: "0.0.0.0" });
 ```
+
+### Deno
+
+```bash
+deno run -A server.ts
+```
+
+Deno 需要显式启动服务器（无自动检测）：
+
+```typescript
+Deno.serve({ port: 3000 }, app.fetch);
+```
+
+所有 Bunny API（路由、中间件、会话、Cookie、模板引擎、静态文件）在两个运行时下使用方式一致。
 
 ## 路由
 

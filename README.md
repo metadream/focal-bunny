@@ -1,43 +1,60 @@
-# 🐰 Bunny — Lightweight Bun Web Framework
+# 🐰 Bunny — Lightweight Web Framework (Bun & Deno)
 
 [中文](README.zh.md) | English
 
-A web framework built on [Bun](https://bun.sh) native APIs with zero external dependencies. Supports routing groups, middleware, template engine, static files, and error handling.
+A web framework built on [Bun](https://bun.sh) native APIs with zero external dependencies. Also runs on [Deno](https://deno.com). Supports routing groups, middleware, template engine, static files, and error handling.
 
 ## Installation
 
 ```bash
-# Install via JSR
+# Bun — via JSR
 bunx jsr add @focal/bunny
+
+# Deno — via JSR
+deno add @focal/bunny
+# or import directly:
+# import { Bunny } from "jsr:@focal/bunny"
 ```
 
 ## Quick Start
 
 ```typescript
+// server.ts
 import { Bunny } from "@focal/bunny";
 
 const app = new Bunny();
 app.get("/", async (c) => "Hello World!");
-export default app;
 ```
 
-Run:
+### Bun
 
 ```bash
 bun run server.ts
 ```
 
-Bun detects the exported `fetch` handler on the Bunny instance and calls `Bun.serve()` automatically. No explicit server startup is needed.
+Add `export default app;` at the end of `server.ts`. Bun detects the `fetch` handler and calls `Bun.serve()` automatically — no explicit startup needed.
 
-To customize server options (port, hostname, TLS, etc.), use `Bun.serve()` directly:
+Customize server options:
 
 ```typescript
-// Option A: Export a config object with port
 export default { fetch: app.fetch, port: 3000 };
-
-// Option B: Call Bun.serve explicitly
+// or
 Bun.serve({ fetch: app.fetch, port: 3000, hostname: "0.0.0.0" });
 ```
+
+### Deno
+
+```bash
+deno run -A server.ts
+```
+
+Deno requires explicit server startup (no auto-detection):
+
+```typescript
+Deno.serve({ port: 3000 }, app.fetch);
+```
+
+All Bunny APIs (routing, middleware, sessions, cookies, template engine, static files) work identically across both runtimes.
 
 ## Routing
 
