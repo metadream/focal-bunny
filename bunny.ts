@@ -188,6 +188,7 @@ export class Context {
 
     /** Read and write session data. Initializes the session lazily on first access. */
     get session(): {
+        id: string;
         get: <T>(key: string) => T | undefined;
         set: (key: string, value: unknown) => void;
         remove: (key: string) => void;
@@ -209,6 +210,7 @@ export class Context {
             }
         }
         return {
+            get id(): string { return self._sessionSid!; },
             get<T>(key: string): T | undefined {
                 return self._sessionData![key] as T;
             },

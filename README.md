@@ -197,8 +197,9 @@ app.get("/logout", async (c) => {
 });
 ```
 
-| Method | Description |
-|---|---|
+| Method / Property | Description |
+|---|---|---|
+| `id` | Current session ID (UUID string) |
 | `get(key)` | Get value by key |
 | `set(key, value)` | Set value |
 | `remove(key)` | Remove a single key |
@@ -406,7 +407,7 @@ export default app;
 | `c.ip` | Remote client IP (auto-detected via `server.requestIP()` & proxy headers) |
 | `c.params` | Path parameters |
 | `c.query` | Query string parameters |
-| `c.session` | Session get/set (`.get<T>(key)`, `.set(key, value)`) |
+| `c.session` | Session get/set/remove/destroy (`.get<T>(key)`, `.set(key, value)`, `.id`) |
 | `c.text(str)` | Plain text response |
 | `c.json(obj)` | JSON response |
 | `c.html(str)` | HTML response |

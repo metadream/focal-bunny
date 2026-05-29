@@ -197,8 +197,9 @@ app.get("/logout", async (c) => {
 });
 ```
 
-| 方法 | 说明 |
-|---|---|
+| 方法 / 属性 | 说明 |
+|---|---|---|
+| `id` | 当前会话 ID（UUID 字符串） |
 | `get(key)` | 获取值 |
 | `set(key, value)` | 设置值 |
 | `remove(key)` | 删除单个字段 |
@@ -406,7 +407,7 @@ export default app;
 | `c.ip` | 远程客户端 IP（自动通过 `server.requestIP()` 及代理头识别） |
 | `c.params` | 路径参数 |
 | `c.query` | 查询字符串参数 |
-| `c.session` | 会话读写（`.get<T>(key)`, `.set(key, value)`） |
+| `c.session` | 会话读写/销毁（`.get<T>(key)`, `.set(key, value)`, `.id`） |
 | `c.text(str)` | 纯文本响应 |
 | `c.json(obj)` | JSON 响应 |
 | `c.html(str)` | HTML 响应 |
