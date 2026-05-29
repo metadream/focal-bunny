@@ -198,7 +198,7 @@ app.get("/logout", async (c) => {
 ```
 
 | Method / Property | Description |
-|---|---|---|
+|---|---|
 | `id` | Current session ID (UUID string) |
 | `get(key)` | Get value by key |
 | `set(key, value)` | Set value |

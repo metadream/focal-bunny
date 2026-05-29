@@ -198,7 +198,7 @@ app.get("/logout", async (c) => {
 ```
 
 | 方法 / 属性 | 说明 |
-|---|---|---|
+|---|---|
 | `id` | 当前会话 ID（UUID 字符串） |
 | `get(key)` | 获取值 |
 | `set(key, value)` | 设置值 |
