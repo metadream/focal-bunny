@@ -259,10 +259,12 @@ app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-The root path defaults to the current working directory. Global variables can be set via `app.engine()` (also accepts a custom root):
+The root path defaults to the current working directory. `app.engine()` accepts three call signatures:
 
 ```typescript
-app.engine("./views", { appName: "MyApp", year: 2026 });
+app.engine("./views");                                // Only set root
+app.engine({ appName: "MyApp", year: 2026 });         // Only set globals
+app.engine("./views", { appName: "MyApp", year: 2026 }); // Both
 ```
 
 When a template is specified as the second route argument, the object returned by the handler is merged with the global variables and exposed to the template. Each property becomes a template variable by its name.
@@ -391,7 +393,9 @@ export default app;
 | `error(template, handler)` | Error handler with template |
 | `route(prefix, sub)` | Mount sub-router |
 | `static(webPath, localPath)` | Static file serving |
-| `engine(tmplRoot, globalVars?)` | Template engine config |
+| `engine(tmplRoot)` | Set template root directory |
+| `engine(globalVars)` | Set global template variables |
+| `engine(tmplRoot, globalVars)` | Set both |
 
 ### Context
 

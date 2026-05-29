@@ -427,10 +427,17 @@ export class Bunny {
         });
     }
 
-    /** Configure the template engine root directory and global variables. Both optional. */
-    engine(tmplRoot?: string, globalVars?: Record<string, unknown>) {
-        if (tmplRoot !== undefined) this.stache.setRoot(tmplRoot);
-        if (globalVars !== undefined) this.stache.setGlobals(globalVars);
+    /** Configure the template engine root directory and global variables. */
+    engine(tmplRoot: string): void;
+    engine(globalVars: Record<string, unknown>): void;
+    engine(tmplRoot: string, globalVars: Record<string, unknown>): void;
+    engine(tmplRoot?: string | Record<string, unknown>, globalVars?: Record<string, unknown>) {
+        if (typeof tmplRoot === "object") {
+            this.stache.setGlobals(tmplRoot);
+        } else {
+            if (tmplRoot) this.stache.setRoot(tmplRoot);
+            if (globalVars) this.stache.setGlobals(globalVars);
+        }
     }
 
     /** Register an error handler. Can be called with a template path and handler, or a handler alone. */

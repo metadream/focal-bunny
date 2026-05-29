@@ -259,10 +259,12 @@ app.engine("./templates", { appName: "MyApp", year: 2026 });
 app.get("/hello", "hello.html", async (c) => ({ name: "World" }));
 ```
 
-根目录默认为当前工作目录。可通过 `app.engine()` 自定义根目录和全局变量：
+根目录默认为当前工作目录。`app.engine()` 支持三种调用方式：
 
 ```typescript
-app.engine("./views", { appName: "MyApp", year: 2026 });
+app.engine("./views");                                // 只设根目录
+app.engine({ appName: "MyApp", year: 2026 });         // 只设全局变量
+app.engine("./views", { appName: "MyApp", year: 2026 }); // 同时设置
 ```
 
 路由处理器返回的对象会与全局变量合并后传入模板，对象的每个属性按名称成为模板变量。
@@ -391,7 +393,9 @@ export default app;
 | `error(template, handler)` | 错误处理器 + 模板 |
 | `route(prefix, sub)` | 挂载子路由 |
 | `static(webPath, localPath)` | 静态文件服务 |
-| `engine(tmplRoot, globalVars?)` | 模板引擎 |
+| `engine(tmplRoot)` | 设置模板根目录 |
+| `engine(globalVars)` | 设置全局模板变量 |
+| `engine(tmplRoot, globalVars)` | 同时设置两者 |
 
 ### Context
 
