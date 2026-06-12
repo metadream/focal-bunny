@@ -560,5 +560,5 @@ function resolveArgs(arg1: Function | string, arg2?: Function): [Function, strin
 }
 
 function joinPath(a: string, b: string): string {
-    return (a + "/" + b).replace(/\/+/g, "/").replace(/\/$/, "");
+    return (a + "/" + b).replace(/\/+/g, "/").replace(/\/$/, "") || "/";
 }
