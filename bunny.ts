@@ -210,7 +210,9 @@ export class Context {
             }
         }
         return {
-            get id(): string { return self._sessionSid!; },
+            get id(): string {
+                return self._sessionSid!;
+            },
             get<T>(key: string): T | undefined {
                 return self._sessionData![key] as T;
             },
@@ -558,5 +560,5 @@ function resolveArgs(arg1: Function | string, arg2?: Function): [Function, strin
 }
 
 function joinPath(a: string, b: string): string {
-    return a.replace(/\/+$/, "") + "/" + b.replace(/^\/+/, "");
+    return (a + "/" + b).replace(/\/+/g, "/").replace(/\/$/, "");
 }
