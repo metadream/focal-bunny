@@ -169,6 +169,8 @@ export class Context {
     private _sessionSid?: string;
     private _cookieJar?: CookieJar;
     private _server?: any;
+    /** Data contributed by middleware, merged into template context on render. */
+    templateData: Record<string, unknown> = {};
     [key: string]: unknown;
 
     constructor(req: Request, server?: any, params: Record<string, string> = {}) {
@@ -361,6 +363,7 @@ export class Bunny {
 
             if (result instanceof Response) return result;
             if (route.template) {
+                result = mergeTemplateData(ctx, result);
                 const html = await this.stache.view(route.template, result);
                 if (!ctx.responseHeaders["content-type"] && !ctx.responseHeaders["Content-Type"]) {
                     ctx.header("Content-Type", "text/html; charset=utf-8");
@@ -475,11 +478,12 @@ export class Bunny {
             return new Response(e.message || "Internal Server Error", { status: 500 });
         }
 
-        const result = await this.errDef.handler(e, ctx);
+        let result = await this.errDef.handler(e, ctx);
         const status = e instanceof HttpError ? e.status : 500;
         if (result instanceof Response) return result;
 
         if (ctx._template && this.errDef.template) {
+            result = mergeTemplateData(ctx, result);
             const html = await this.stache.view(this.errDef.template, result);
             const h = new Headers(ctx.headerEntries);
             h.set("Content-Type", "text/html; charset=utf-8");
@@ -562,4 +566,15 @@ function resolveArgs(arg1: Function | string, arg2?: Function): [Function, strin
 
 function joinPath(a: string, b: string): string {
     return (a + "/" + b).replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+}
+
+/** Check if a value is a plain key-value object (for template data merging) */
+function isPlainObject(val: unknown): val is Record<string, unknown> {
+    return Object.prototype.toString.call(val) === "[object Object]";
+}
+
+/** Merge `ctx.templateData` into the template rendering data */
+function mergeTemplateData(ctx: Context, data: unknown): unknown {
+    if (!Object.keys(ctx.templateData).length || !isPlainObject(data)) return data;
+    return { ...ctx.templateData, ...data };
 }
