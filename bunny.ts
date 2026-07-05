@@ -351,7 +351,8 @@ export class Bunny {
 
             const compose = async (i: number): Promise<void> => {
                 if (i < mws.length) {
-                    await mws[i].handler(ctx, () => compose(i + 1));
+                    const r = await mws[i].handler(ctx, () => compose(i + 1));
+                    if (r !== undefined) result = r;
                 } else {
                     result = await route.handler(ctx);
                 }
