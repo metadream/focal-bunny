@@ -270,6 +270,20 @@ app.engine("./views", { appName: "MyApp", year: 2026 }); // Both
 
 When a template is specified as the second route argument, the object returned by the handler is merged with the global variables and exposed to the template. Each property becomes a template variable by its name.
 
+You can also render templates manually via `c.render()` (template string) and `c.view()` (template file) — both return the rendered HTML string and merge `ctx.templateData` (middleware-contributed data) automatically:
+
+```typescript
+app.get("/manual", async (c) => {
+    const html = await c.view("hello.html", { name: "World" });
+    return c.html(html);
+});
+
+app.get("/inline", async (c) => {
+    const html = await c.render("<h1>Hello {{=name}}</h1>", { name: "World" });
+    return c.html(html);
+});
+```
+
 | Syntax | Meaning | Example |
 |---|---|---|
 | `{{=expr}}` | Output expression | `{{=user.name}}` |
@@ -414,3 +428,5 @@ export default app;
 | `c.redirect(url, code?)` | Redirect (default 307, also 301/302/308) |
 | `c.status(code)` | Set status code (chainable) |
 | `c.header(name, value)` | Set response header (chainable) |
+| `c.render(template, data?)` | Render a template string, returns `Promise<string>` |
+| `c.view(file, data?)` | Render a template file, returns `Promise<string>` |

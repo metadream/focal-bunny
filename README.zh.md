@@ -270,6 +270,20 @@ app.engine("./views", { appName: "MyApp", year: 2026 }); // 同时设置
 
 路由处理器返回的对象会与全局变量合并后传入模板，对象的每个属性按名称成为模板变量。
 
+也可以通过 `c.render()`（模板字符串）和 `c.view()`（模板文件）手动渲染模板——两者返回渲染后的 HTML 字符串，并自动合并 `ctx.templateData`（中间件注入的数据）：
+
+```typescript
+app.get("/manual", async (c) => {
+    const html = await c.view("hello.html", { name: "World" });
+    return c.html(html);
+});
+
+app.get("/inline", async (c) => {
+    const html = await c.render("<h1>Hello {{=name}}</h1>", { name: "World" });
+    return c.html(html);
+});
+```
+
 | 语法 | 说明 | 示例 |
 |---|---|---|
 | `{{=expr}}` | 输出表达式 | `{{=user.name}}` |
@@ -414,3 +428,5 @@ export default app;
 | `c.redirect(url, code?)` | 重定向（默认 307，支持 301/302/308） |
 | `c.status(code)` | 设置状态码（链式） |
 | `c.header(name, value)` | 设置响应头（链式） |
+| `c.render(template, data?)` | 渲染模板字符串，返回 `Promise<string>` |
+| `c.view(file, data?)` | 渲染模板文件，返回 `Promise<string>` |
