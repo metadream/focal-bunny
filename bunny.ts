@@ -163,19 +163,23 @@ export class Context {
     params: Record<string, string>;
     /** Parsed query-string parameters from the URL. */
     query: Record<string, string>;
-    private resStatus = 200;
-    private resHeaders = new Headers();
-    private _sessionData?: Record<string, unknown>;
-    private _sessionSid?: string;
-    private _cookieJar?: CookieJar;
-    private _server?: any;
     /** Data contributed by middleware, merged into template context on render. */
     templateData: Record<string, unknown> = {};
+
+    private resStatus = 200;
+    private resHeaders = new Headers();
     [key: string]: unknown;
 
-    constructor(req: Request, server?: any, params: Record<string, string> = {}) {
+    private _server: any;
+    private _stache: Mustache;
+    private _sessionSid?: string;
+    private _sessionData?: Record<string, unknown>;
+    private _cookieJar?: CookieJar;
+
+    constructor(req: Request, server: any, stache: Mustache, params: Record<string, string>) {
         this.req = req;
         this._server = server;
+        this._stache = stache;
         this.params = params;
         this.query = Object.fromEntries(new URL(req.url).searchParams);
     }
@@ -296,6 +300,16 @@ export class Context {
         return new Response(null, { status: code, headers: new Headers(this.resHeaders) });
     }
 
+    /** Render a template string with data. */
+    render(template: string, data: Record<string, unknown> = {}): Promise<string> {
+        return this._stache.render(template, mergeTemplateData(this, data));
+    }
+
+    /** Render a template file with data. */
+    view(file: string, data: Record<string, unknown> = {}): Promise<string> {
+        return this._stache.view(file, mergeTemplateData(this, data));
+    }
+
     /** The response status code (read-only, set via `.status()`). */
     get responseStatus(): number {
         return this.resStatus;
@@ -332,7 +346,7 @@ export class Bunny {
     fetch = async (req: Request, server?: any): Promise<Response> => {
         const url = new URL(req.url);
         const params: Record<string, string> = {};
-        const ctx = new Context(req, server, params);
+        const ctx = new Context(req, server, this.stache, params);
 
         try {
             const route = this.routes.find((r) => r.method === req.method && r.urlp.test(url));
